@@ -1,6 +1,6 @@
 const {app, BrowserWindow, Menu, shell} = require('electron');
 const fs = require('fs');
-
+const $ = require('jquery');
 let mainWindow;
 const config = JSON.parse(fs.readFileSync('./config/config.json','utf8'));
 //window creation
@@ -9,14 +9,14 @@ function createWindow(){
         plugins: true
       }});
 
-    if(config.maximize == true)mainWindow.maximize();
+    if(config.fullscreen == false)mainWindow.maximize();
     mainWindow.loadFile('index.html');
     mainWindow.setMenuBarVisibility(false);
     mainWindow.setAutoHideMenuBar(true);
     mainWindow.on('closed', () => {
         mainWindow = null
     })
-
+    
     compileInput();
 }
 

@@ -37,29 +37,28 @@ function loadFile(){
     //parsing of the json for the input forms
     input = JSON.parse(fs.readFileSync(inputs[index], 'utf8'));
     //creation of the input forms
+    var inputdiv = $('<div class="form-group form-group-sm">');
     for(let i in input){
-        let inputdiv = $('<div class="inputdiv">');
-        let inputprep = $('<div class="inputprep">');
-        inputlinetitle = $('<span class="input-group">').append( i.charAt(0).toUpperCase() + i.slice(1).toLowerCase());
+        let inputprep = $('<div class="input-group">');
+        inputlinetitle = $('<span class="input-group-addon">').append( i.charAt(0).toUpperCase() + i.slice(1).toLowerCase());
         //inputlinetitle.css();
-        inputprep.css('width','28%');
-        inputprep.css('margin-right','0px');
+        inputprep.css('float','left');
+        inputprep.css('width','48%');
+        inputprep.css('box-sizing','border-box');
         inputprep.append(inputlinetitle);
-        inputdiv.append(inputprep);
         inputline = $('<input>');
         inputline.attr('id', i);
         inputline.attr('type','text');
         inputline.attr('class', 'form-control form-control-sm');
         inputline.attr('placeholder', "Place Input Here...");
-        inputline.css('width','70%');
-        inputline.css('margin-left','0px');
-        inputdiv.append(inputline);
-        inputcontainer.append(inputdiv);
+        inputprep.append(inputline);
+        inputdiv.append(inputprep);
     }
-
+    inputcontainer.append(inputdiv);
     //create save button
     savebutton = $('<button type="button" class="btn btn-sm btn-primary">');
-    savebutton.css('margin','5% 80%');
+    savebutton.position('relative');
+    savebutton.css('margin','10% 30%');
     savebutton.append('SAVE');
     savebutton.click(writejsonoutput);
     inputcontainer.append(savebutton);
@@ -70,7 +69,6 @@ function loadFile(){
         imagecontainer.css("backgroundRepeat", "no-repeat");
         imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
     }
-    console.log(jQuery().jquery)
     addEvents();
 
 }
@@ -124,6 +122,7 @@ function addEvents(){
         });
     }
 }
+
 function writejsonoutput(){
     let data = {};
     
