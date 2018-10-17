@@ -1,4 +1,4 @@
-const {app, BrowserWindow, Menu, shell} = require('electron');
+const {app, BrowserWindow, Menu, MenuItem, ipcMain, shell} = require('electron');
 const fs = require('fs');
 const $ = require('jquery');
 let mainWindow;
@@ -47,6 +47,21 @@ function compileInput(){
     global.images = {images:images};
     global.inputs = {inputs:inputs};
 }
+
+//context menu set up
+const menu = new Menu()
+menu.append(new MenuItem({ id:'reset', label: 'Reset', role:'reload'}))
+
+app.on('browser-window-created', (event, win) => {
+  win.webContents.on('context-menu', (e, params) => {
+    menu.popup(win, params.x, params.y)
+  })
+})
+
+ipcMain.on('show-context-menu', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  menu.popup(win)
+})
 
  //menu set up
  if(config.devmode == false){

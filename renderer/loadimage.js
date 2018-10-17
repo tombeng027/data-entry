@@ -1,4 +1,5 @@
 const remote = require('electron').remote;
+const { Menu, MenuItem } = require('electron');
 const fs = require('fs');
 const $ = require('jquery');
 const config = JSON.parse(fs.readFileSync('./config/config.json','utf8'));
@@ -17,7 +18,7 @@ var input;
 var inputline;
 var inputlinetitle;
 var cx = imagecontainer.outerWidth()/1000; //variable that relates the image viewer and the original image
-var cy = imagecontainer.outerHeight()/1000; 
+var cy = imagecontainer.outerHeight()/700; 
 var top; var left;
 //variables for checking if all inputs are done and its time to load the next image
 var savebutton;
@@ -48,6 +49,7 @@ function loadFile(){
         inputprep.append(inputlinetitle);
         inputline = $('<input>');
         inputline.attr('id', i);
+        inputline.attr('value', localStorage.getItem(i));
         inputline.attr('type','text');
         inputline.attr('class', 'form-control form-control-sm');
         inputline.attr('placeholder', "Place Input Here...");
@@ -68,9 +70,8 @@ function loadFile(){
         imagecontainer.css("backgroundImage", "url('" + img.src + "')");
         imagecontainer.css("backgroundRepeat", "no-repeat");
         imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
+        addEvents();
     }
-    addEvents();
-
 }
 
 //function to add events on the input elements
@@ -86,12 +87,13 @@ function addEvents(){
         let w = ((lowerleftx * cx) - 200)*-1; //value should be negative
         let h = ((lowerlefty * cy) - 200)*-1;
         if(config.textatbottom == true){
-            top = 173 + (highlightheight*cy); left = 180;
+            top = 180 + (highlightheight*cy); left = 195;
         }else if(config.textatbottom == false){
-            top = 173; left = 180 + (highlightwidth*cx);
+            top = 180; left = 195 + (highlightwidth*cx);
         }else{
-            top = 175; left = 185;
+            top = 182; left = 198;
         }
+        
         //event when textbox is on focus
         $('#'+i).focus((event)=>{
             //setting size of image viewer
@@ -120,6 +122,9 @@ function addEvents(){
                     console.log("input value is: " + $('#'+i).val());      
             }
         });
+        $('#'+i).keyup((event)=>{
+            localStorage.setItem(i,$('#'+i).val());
+        });
     }
 }
 
@@ -146,5 +151,56 @@ function loadnextfile(){
     loadFile();
 }
 
-
 $(document).ready(loadFile);
+//make image viewer draggable
+$(document).ready(function(){
+    var $bg = $('#imagecontainer'),
+        origin = {x: 0, y: 0},
+        start = {x: 0, y: 0},
+        movecontinue = false;
+    
+    function move (e){
+        var moveby = {
+            x: origin.x - e.clientX, 
+            y: origin.y - e.clientY
+        };
+        
+        if (movecontinue === true) {
+            start.x = start.x - moveby.x;
+            start.y = start.y - moveby.y;
+            
+            $(this).css('background-position', start.x + 'px ' + start.y + 'px');
+        }
+        
+        origin.x = e.clientX;
+        origin.y = e.clientY;
+        
+        e.stopPropagation();
+        return false;
+    }
+    
+    function handle (e){
+        movecontinue = false;
+        $bg.unbind('mousemove', move);
+        console.log(e.clientX + " " + e.clientY)
+        if (e.type == 'mousedown') {
+            if(e.clientX != $bg.width - 10)origin.x = e.clientX;
+            if(e.clientY != $bg.height - 10)origin.y = e.clientY;
+            movecontinue = true;
+            $bg.bind('mousemove', move);
+        } else {
+            $(document.body).focus();
+        }
+        
+        e.stopPropagation();
+        return false;
+    }
+    
+    function reset (){
+        start = {x: 0, y: 0};
+        $(this).css('backgroundPosition', '0 0');
+    }
+    
+    $bg.bind('mousedown mouseup mouseleave', handle);
+    $bg.bind('dblclick', reset);
+});
