@@ -1,0 +1,23 @@
+{
+  "name": "data-entry",
+  "version": "1.0.0",
+  "description": "data entry and image viewer",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "data",
+    "entry"
+  ],
+  "author": "nbriones",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jquery": "^3.3.17",
+    "electron": "^3.0.3"
+  },
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "jquery": "^3.3.1"
+  }
+}

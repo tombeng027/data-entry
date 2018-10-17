@@ -1,0 +1,77 @@
+body{
+    background-color: dimgray;
+    overflow-x: hidden;
+}
+
+body div{
+    display: block;
+    float: left;
+    background-color: gainsboro;
+    border: 10px 10px ridge gray;
+    padding: 5px;
+    margin: 1%;
+}
+
+#imagecontainer{
+    width: 60%;
+    height: 650px;
+    box-shadow: 1px 1px 4px 4px moccasin,1px 1px 4px 4px inset whitesmoke;
+}
+
+#inputcontainer{
+    width: 35%;
+    height: 650px;
+    overflow: scroll; 
+    box-shadow: 2px 2px black;
+}
+
+#image{
+    margin-left: 120%;
+}
+.inputdiv{
+    width: 100%;
+}
+
+.inputprep{
+    background-color: dimgray;
+    border-radius: 3px 3px;
+    border: 1px ridge gray;
+    color: white;
+    display:flex;
+    float:left;
+    width: auto;
+}
+
+input{
+    border-style: inset;
+    display:flex;
+    float: right;
+    padding: 1%;
+    margin: 1%;
+}
+
+span{
+    display:block;
+    float: left;
+    text-align: center;
+}
+
+.highlightBox{
+    background-color: rgba(30, 143, 255, 0.432);
+    z-index: 5;
+    border: 1px 1px solid white;
+}
+
+@media only screen and (max-width: 1280px) {
+    body {
+        background-color: lightslategray;
+    }
+    #imagecontainer{
+        width: 97%;
+        height: 300px;
+    }
+    #inputcontainer{
+        width: 97%;
+        height: 300px;
+    }
+}
