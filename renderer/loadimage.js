@@ -41,7 +41,7 @@ function loadFile(){
     var inputdiv = $('<div class="form-group form-group-sm">');
     for(let i in input){
         let inputprep = $('<div class="input-group">');
-        inputlinetitle = $('<span class="input-group-addon">').append( i.charAt(0).toUpperCase() + i.slice(1).toLowerCase());
+        inputlinetitle = $('<span class="input-group-addon">').append(input[i].placeholder);
         //inputlinetitle.css();
         inputprep.css('float','left');
         inputprep.css('width','48%');
