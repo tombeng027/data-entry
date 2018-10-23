@@ -1,12 +1,9 @@
 const remote = require('electron').remote;
-const { Menu, MenuItem } = require('electron');
 const fs = require('fs');
 const $ = require('jquery');
 const config = JSON.parse(fs.readFileSync('./config/config.json','utf8'));
 //variable for manipulation the current image being processed and the shared collection of file inputs and images
 var index = 0;
-var images = remote.getGlobal('images').images;
-var inputs = remote.getGlobal('inputs').inputs;
 //variable of the original image loaded with its original size
 var hiddenimage = $('#image');
 var img = new Image();
@@ -15,22 +12,27 @@ var imagecontainer = $('#imagecontainer');
 var inputcontainer = $('#inputcontainer');
 //variables for creating the input forms and the image viewer
 var input;
-var inputline;
-var inputlinetitle;
 var cx = imagecontainer.outerWidth()/1000; //variable that relates the image viewer and the original image
 var cy = imagecontainer.outerHeight()/700; 
 var top; var left;
 //variables for checking if all inputs are done and its time to load the next image
 var savebutton;
 //function to load the image, create the input forms and the image viewer
+var images = remote.getGlobal('images');
+var inputs = remote.getGlobal('inputs');
+
 function loadFile(){
-    //check to close the window if all files have been processed
+     //check to close the window if all files have been processed
     if(index == images.length){
-        window.close()
+        //window.close()
+        $('#nofile').show();
     }
-    if(config.fullscreen == true){
-        inputcontainer.css('height', '720');
-        imagecontainer.css('height', '720');
+
+    if(config.orientation.rows == true){
+        $('#viewer').css('width','99.5%');
+        $('#viewer').css('height','500px');
+        inputcontainer.css('width', '99.5%');
+        inputcontainer.css('height', '190px');
     }
     //loading of the image
     img.src = images[index];
@@ -39,28 +41,36 @@ function loadFile(){
     input = JSON.parse(fs.readFileSync(inputs[index], 'utf8'));
     //creation of the input forms
     var inputdiv = $('<div class="form-group form-group-sm">');
+    let x = 1;
     for(let i in input){
         let inputprep = $('<div class="input-group">');
-        inputlinetitle = $('<span class="input-group-addon">').append(input[i].placeholder);
+        let inputlinetitle = $('<span class="input-group-addon">').append(input[i].placeholder);
         //inputlinetitle.css();
         inputprep.css('float','left');
-        inputprep.css('width','48%');
+        if(config.inputorientation.rows == true){
+            inputprep.css('width','99%');
+        }else{
+            inputprep.css('width','48%');
+        }
         inputprep.css('box-sizing','border-box');
         inputprep.append(inputlinetitle);
-        inputline = $('<input>');
+        let inputline = $('<input>');
         inputline.attr('id', i);
         inputline.attr('value', localStorage.getItem(i));
         inputline.attr('type','text');
         inputline.attr('class', 'form-control form-control-sm');
         inputline.attr('placeholder', "Place Input Here...");
         inputprep.append(inputline);
+        inputline.attr('tabIndex', x++);
         inputdiv.append(inputprep);
     }
+
     inputcontainer.append(inputdiv);
     //create save button
     savebutton = $('<button type="button" class="btn btn-sm btn-primary">');
     savebutton.position('relative');
     savebutton.css('margin','10% 30%');
+    savebutton.attr('tabIndex',x)
     savebutton.append('SAVE');
     savebutton.click(writejsonoutput);
     inputcontainer.append(savebutton);
@@ -69,7 +79,12 @@ function loadFile(){
     img.onload = function(){
         imagecontainer.css("backgroundImage", "url('" + img.src + "')");
         imagecontainer.css("backgroundRepeat", "no-repeat");
-        imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
+        if(config.blockscroll == false){
+            imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
+        }else{
+            imagecontainer.css("backgroundSize", parseInt(imagecontainer.css('width')) + "px " + parseInt(imagecontainer.css('height'))*2 + "px");
+        }
+        
         addEvents();
     }
 }
@@ -93,36 +108,46 @@ function addEvents(){
         }else{
             top = 182; left = 198;
         }
-        
+                
         //event when textbox is on focus
         $('#'+i).focus((event)=>{
-            //setting size of image viewer
-            imagecontainer.css("backgroundPosition",  w + "px " + h + "px");
-            //creating highlight box and position it on the word
-            highlight = $('<div class="highlightBox">');
-            highlight.css('width', (highlightwidth*cx) + "px");
-            highlight.css('height', (highlightheight*cy) + "px");
-            imagecontainer.append(highlight);
-            highlight.css('position', "relative");
-            highlight.css('top', top + "px");
-            highlight.css('left', left + "px");
+            if(config.blockscroll == false){
+                //setting size of image viewer
+                imagecontainer.css("backgroundPosition",  w + "px " + h + "px");
+                //creating highlight box and position it on the word
+                highlight = $('<div class="highlightBox">');
+                highlight.css('width', (highlightwidth*cx) + "px");
+                highlight.css('height', (highlightheight*cy) + "px");
+                imagecontainer.append(highlight);
+                highlight.css('position', "relative");
+                highlight.css('top', top + "px");
+                highlight.css('left', left + "px");
+            }else{
+                imagecontainer.css("backgroundPosition",  0 + "px " + h + "px");
+                //creating highlight box and position it on the word
+                highlight = $('<div class="highlightBox">');
+                highlight.css('width', (highlightwidth*cx) + "px");
+                highlight.css('height', (highlightheight*cy) + "px");
+                imagecontainer.append(highlight);
+                highlight.css('top',top);
+                highlight.css('left',left);
+            }
         });
-
         //event when text box is out of focus
         $('#'+i).blur((event)=>{
             //remove highlight when out of focus
             highlight.remove();
         });
         
-        //event on pressing enter
-        $('#'+i).keydown((event)=>{
-            //count & check if inputs are done
-            if(event.keyCode == 13){
-                    //logs for checking the actions when enter is pressed in the input  
-                    console.log("input value is: " + $('#'+i).val());      
-            }
-        });
         $('#'+i).keyup((event)=>{
+            if(event.keyCode == 13){
+                //logs for checking the actions when enter is pressed in the input  ; 
+                let z = parseInt($('#'+i).attr('tabIndex')) + 1;
+                console.log(z)
+                let $next = $('[tabIndex=' + z +']');
+                console.log($next.html());
+                $next.focus();  
+            }
             localStorage.setItem(i,$('#'+i).val());
         });
     }
@@ -182,7 +207,6 @@ $(document).ready(function(){
     function handle (e){
         movecontinue = false;
         $bg.unbind('mousemove', move);
-        console.log(e.clientX + " " + e.clientY)
         if (e.type == 'mousedown') {
             if(e.clientX != $bg.width - 10)origin.x = e.clientX;
             if(e.clientY != $bg.height - 10)origin.y = e.clientY;

@@ -10,11 +10,19 @@
         <link rel="stylesheet" href="./index.css">
     </head>
     <body>
-        <div id='viewer'>
+        <div id='viewer' class="ui-widget-content">
         <div id='imagecontainer'></div>
         </div>
         <div id='inputcontainer' ></div>
         <div id='image' alt="please wait"></div>
+        <!-- Small modal -->
+        <div id='nofile' class="modal bd-example-modal-sm" tabindex="-1">
+            <div class="modal-dialog modal-sm">
+                  <div class="modal-content">
+                    No File Selected
+                  </div>
+            </div>
+        </div>
     </body>
     <script>
         require('jquery');
@@ -22,5 +30,5 @@
     </script>
     <script src="jquery.min.js"></script>
     <script src="./bootstrap/js/bootstrap.min.js"></script>
-    
+        
 </html>

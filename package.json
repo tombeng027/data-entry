@@ -4,7 +4,14 @@
   "description": "data entry and image viewer",
   "main": "index.js",
   "scripts": {
-    "start": "electron ."
+    "postinstall": "electron-builder install-app-deps",
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "build":{
+    "productName":"Data Entry Prototype",
+    "extraFiles": ["config/"]
   },
   "keywords": [
     "data",
@@ -14,10 +21,16 @@
   "license": "ISC",
   "devDependencies": {
     "@types/jquery": "^3.3.17",
-    "electron": "^3.0.3"
+    "electron": "latest",
+    "electron-build": "latest",
+    "electron-builder": "latest"
+  },
+  "win": {
+    "target": "NSIS"
   },
   "dependencies": {
     "bootstrap": "^3.3.7",
+    "electron-packager": "^12.2.0",
     "jquery": "^3.3.1",
     "jquery-ui": "file:jquery-ui"
   }

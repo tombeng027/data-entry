@@ -3,6 +3,7 @@ const fs = require('fs');
 const $ = require('jquery');
 let mainWindow;
 const config = JSON.parse(fs.readFileSync('./config/config.json','utf8'));
+let configWindow;
 //window creation
 function createWindow(){
     mainWindow = new BrowserWindow({ minWidth:600, minHeight:750,width:1366, height:720, frame:config.frame, fullscreen:config.fullscreen, webPreferences: {
@@ -16,7 +17,7 @@ function createWindow(){
     mainWindow.on('closed', () => {
         mainWindow = null
     })
-    
+
     compileInput();
 }
 
@@ -25,28 +26,9 @@ app.on('ready', createWindow);
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
+        mainWindow.removeAllListeners('close');
       }
 })
-
-//compilation of inputs
-var images = [];
-var inputs = [];
-
-function compileInput(){
-    fs.readdir(config.image, (err, dir) => {
-            for(let i in dir){
-                images.push(config.image + dir[i]);
-            }
-    });
-    fs.readdir(config.input, (err, dir) => {
-            for(let i in dir){
-                inputs.push(config.input + dir[i]);
-            }
-    }) ;
-    //sharing of input and image arrays for processing in the renderer
-    global.images = {images:images};
-    global.inputs = {inputs:inputs};
-}
 
 //context menu set up
 const menu = new Menu()
@@ -63,13 +45,50 @@ ipcMain.on('show-context-menu', (event) => {
   menu.popup(win)
 })
 
+var images = [];
+var inputs = [];
+
+function compileInput(){
+    //compilation of inputs 
+    fs.readdir(config.image, (err, dir) => {
+            for(let i in dir){
+                images.push(config.image + dir[i]);
+            }
+    });
+    fs.readdir(config.input, (err, dir) => {
+            for(let i in dir){
+                inputs.push(config.input + dir[i]);
+            }
+    });
+
+    global.images = images;
+    global.inputs = inputs;
+}
+
  //menu set up
  if(config.devmode == false){
     let template = [{
       label: 'File',
       submenu: [{
+        label:'Settings',
+        click: ()=>{
+          configWindow = new BrowserWindow({ width:300, height:370 });
+          configWindow.loadFile('./config/config.html');
+          // configWindow.setResizable(false);
+          // configWindow.setMenuBarVisibility(false);
+          global.configWindow = configWindow;
+          global.mainWindow = mainWindow;
+          configWindow.on('closed', () => {
+            configWindow = null
+          });
+        }
+      },
+      {
+        label: 'DevTools',
+        role: 'toggledevtools'
+      },
+      {
         label: 'Exit',
-        accelerator: 'CmdOrCtrl+X',
         role: 'close'
       }]
     }, {
@@ -77,8 +96,10 @@ ipcMain.on('show-context-menu', (event) => {
       role: 'window',
       submenu: [{
         label: 'Minimize',
-        accelerator: 'CmdOrCtrl+M',
         role: 'minimize'
+      },{
+        label: 'Fulscreen',
+        role: 'togglefullscreen'
       }]
     }, {
       label: 'Help',

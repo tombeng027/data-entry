@@ -1,5 +1,5 @@
 body{
-    overflow: hidden;
+    /* overflow: hidden; */
 }
 
 #viewer{
@@ -44,10 +44,9 @@ body{
     border: 1px 1px solid white;
 }
 
-
 @media only screen and (max-width: 1280px) {
 
-    #imagecontainer {
+    #viewer {
         width: 97%;
         height: 400px;
     }
