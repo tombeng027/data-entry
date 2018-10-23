@@ -11,7 +11,7 @@ function createWindow(){
       }});
 
     if(config.fullscreen == false)mainWindow.maximize();
-    mainWindow.loadFile('index.html');
+    mainWindow.loadFile('./sections/index.html');
     mainWindow.setMenuBarVisibility(false);
     mainWindow.setAutoHideMenuBar(true);
     mainWindow.on('closed', () => {
@@ -72,10 +72,10 @@ function compileInput(){
       submenu: [{
         label:'Settings',
         click: ()=>{
-          configWindow = new BrowserWindow({ width:300, height:370 });
-          configWindow.loadFile('./config/config.html');
-          // configWindow.setResizable(false);
-          // configWindow.setMenuBarVisibility(false);
+          configWindow = new BrowserWindow({ width:300, height:400 });
+          configWindow.loadFile('./sections/config.html');
+          configWindow.setResizable(false);
+          configWindow.setMenuBarVisibility(false);
           global.configWindow = configWindow;
           global.mainWindow = mainWindow;
           configWindow.on('closed', () => {
@@ -83,10 +83,10 @@ function compileInput(){
           });
         }
       },
-      {
-        label: 'DevTools',
-        role: 'toggledevtools'
-      },
+      // {
+      //   label: 'DevTools',
+      //   role: 'toggledevtools'
+      // },
       {
         label: 'Exit',
         role: 'close'
