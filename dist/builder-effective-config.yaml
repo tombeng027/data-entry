@@ -1,0 +1,7 @@
+directories:
+  output: dist
+  buildResources: build
+productName: Data Entry Prototype
+extraFiles:
+  - ./src/environment/config/config.json
+electronVersion: 3.0.5

@@ -11,7 +11,7 @@
   },
   "build":{
     "productName":"Data Entry Prototype",
-    "extraFiles": ["config/"]
+    "extraFiles": ["./src/environment/config/config.json"]
   },
   "keywords": [
     "data",
