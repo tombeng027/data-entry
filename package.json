@@ -2,7 +2,7 @@
   "name": "data-entry",
   "version": "1.0.0",
   "description": "data entry and image viewer",
-  "main": "index.js",
+  "main": "./src/index.js",
   "scripts": {
     "postinstall": "electron-builder install-app-deps",
     "start": "electron .",
@@ -29,9 +29,9 @@
     "target": "NSIS"
   },
   "dependencies": {
-    "bootstrap": "^3.3.7",
+    "bootstrap": "^4.1.2",
     "electron-packager": "^12.2.0",
     "jquery": "^3.3.1",
-    "jquery-ui": "file:jquery-ui"
+    "jquery-ui": "file:./lib/jquery-ui"
   }
 }
