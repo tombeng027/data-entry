@@ -1,3 +1,4 @@
+
 const remote = require('electron').remote;
 const fs = require('fs');
 const $ = require('jquery');
@@ -11,6 +12,7 @@ var img = new Image();
 var imagecontainer = $('#imagecontainer');
 var inputcontainer = $('#inputcontainer');
 var viewer = $('#viewer');
+var container = $('#container');
 //variables for creating the input forms and the image viewer
 var input;
 var cx = imagecontainer.outerWidth()/1000; //variable that relates the image viewer and the original image
@@ -21,6 +23,7 @@ var savebutton;
 //function to load the image, create the input forms and the image viewer
 var images = remote.getGlobal('images');
 var inputs = remote.getGlobal('inputs');
+
 //function to load file
 function loadFile(){
      //check to close the window if all files have been processed
@@ -41,13 +44,14 @@ function loadFile(){
 
     //creating resize handle
     if(config.orientation.rows == false){
-        let handle = $('<div id="handle-ew">');
-        imagecontainer.append(handle);
+        let handle = $('<div id="handle" class="handle-ew">');
+        container.css('display', 'flex');
+        handle.insertBefore(inputcontainer);
         handle.css('left', parseInt(viewer.css('width').replace('px',''))  + 'px'); 
         handle.on('mousedown',initResize);
     }else{
-        let handle = $('<div id="handle-ns">');
-        viewer.append(handle);
+        let handle = $('<div id="handle" class="handle-ns">');
+        handle.insertBefore(inputcontainer);
         handle.css('top', parseInt(viewer.css('height').replace('px',''))  + 'px'); 
         handle.on('mousedown',initResize);
     }
@@ -70,10 +74,11 @@ function loadFile(){
         inputprep.append(inputlinetitle);
         let inputline = $('<input>');
         inputline.attr('id', i);
+        addValidations(inputline, i);
         inputline.attr('value', localStorage.getItem(i));
         inputline.attr('type','text');
         inputline.attr('class', 'form-control form-control-sm');
-        inputline.attr('placeholder', "Place Input Here...");
+        inputline.attr('validity', 'true');
         inputprep.append(inputline);
         inputline.attr('tabIndex', x++);
         inputdiv.append(inputprep);
@@ -102,24 +107,36 @@ function loadFile(){
         addEvents();
     }
 }
+
+function addValidations(inputline,i){
+    var title = '';
+    for(let key in input[i].validation){
+        if(input[i].validation[key] == true){
+           title += "\n" + key;
+        }else if(input[i].validation[key] != false && !isNaN(input[i].validation[key])){
+            title += "\nShould be " + input[i].validation[key] + " characters";
+        }
+        inputline.attr(key,input[i].validation[key]);
+    }
+    inputline.attr('title', title);
+}
 //functions to resize the viewer and inputcontainer divs
 function initResize() {
     document.addEventListener('mousemove', Resize, false);
     document.addEventListener('click', stopResize, false);
 }
- function Resize(e) {
+function Resize(e) {
     if(config.orientation.rows == false){
-        if( e.clientX > 300 && e.clientX < 1000){
+        if( e.clientX > 300 && e.clientX < 1100){
             let pWidth = parseInt($('#viewer').css('width').replace('px', '')); 
             let nWidth = (e.clientX - viewer.offset().left);
             let diff = pWidth - nWidth;
             viewer.css('width', nWidth + 'px');
             let nw = parseInt(inputcontainer.css('width').replace('px', ''));
-            inputcontainer.css('width', nw + diff + 1 + 'px');
-            $('#handle-ew').css('left', parseInt(imagecontainer.css('width').replace('px','')) + 13 + 'px');
+            inputcontainer.css('width', container.width() - inputcontainer.offset().left + 'px');
         }
     }else{
-        if(e.clientY > 300 && e.clientY < 720){
+        if(e.clientY > 300 && e.clientY < 620){
             let pHeight = parseInt($('#viewer').css('height').replace('px', '')); 
             let nHeight = (e.clientY - $('#viewer').offset().top);
             let diff = pHeight - nHeight;
@@ -127,7 +144,6 @@ function initResize() {
             viewer.css('height', vdiff + 'px');
             let nh = parseInt(inputcontainer.css('height').replace('px', ''));
             inputcontainer.css('height', nh + diff + 1 + 'px');
-            $('#handle-ns').css('top', parseInt(imagecontainer.css('height').replace('px','')) + 13 + 'px');
         }
     }
 }
@@ -159,7 +175,7 @@ function addEvents(){
         //event when textbox is on focus
         $('#'+i).focus((event)=>{
             if(config.blockscroll == false){
-                //setting size of image viewer
+                //setting position of the image in the image viewer
                 imagecontainer.css("backgroundPosition",  w + "px " + h + "px");
                 //creating highlight box and position it on the word
                 highlight = $('<div class="highlightBox">');
@@ -170,6 +186,7 @@ function addEvents(){
                 highlight.css('top', top + "px");
                 highlight.css('left', left + "px");
             }else{
+                //setting the position of the image without moving the x axis
                 imagecontainer.css("backgroundPosition",  0 + "px " + h + "px");
                 //creating highlight box and position it on the word
                 highlight = $('<div class="highlightBox">');
@@ -183,21 +200,104 @@ function addEvents(){
         //event when text box is out of focus
         $('#'+i).blur((event)=>{
             //remove highlight when out of focus
-            highlight.remove();
+            $('#imagecontainer').empty();
         });
         
         $('#'+i).keyup((event)=>{
+            if(event.keyCode == 45) $('#'+i).val('');
+            //for input validation
             if(event.keyCode == 13){
+                if($('#'+i).is('input')){
+                    validateInput(i);
+                }
                 //logs for checking the actions when enter is pressed in the input  ; 
                 let z = parseInt($('#'+i).attr('tabIndex')) + 1;
-                console.log(z)
+                let current = $('[tabIndex=' + (z - 1) +']');
                 let $next = $('[tabIndex=' + z +']');
-                console.log($next.html());
-                $next.focus();  
+                if($('#'+i).attr('validity') == 'true'){
+                    $next.focus();  
+                }else{
+                    $('#proceedmodal').show();
+                    current.blur();
+                    $('#proceedbuttonyes').focus();
+                    addEventonProceed($next, current,highlight);
+                }
             }
             localStorage.setItem(i,$('#'+i).val());
-        });
+        });  
     }
+}
+
+function addEventonProceed($next, current,highlight){
+    $('#proceedbuttonyes').keyup((event)=>{
+        if(event.keyCode == 39){
+            $('#proceedbuttonno').focus();
+        }
+        if(event.keyCode == 13){
+            $('#proceedmodal').hide();
+            current.blur();
+            $('body').append($('#tooltiptext'));
+            $('body').append($('#tooltiptext-b'));
+            $next.focus();
+        }
+    });
+    $('#proceedbuttonno').keyup((event)=>{
+        if(event.keyCode == 37){
+            $('#proceedbuttonno').focus();
+        }
+        if(event.keyCode == 13){
+            $('#proceedmodal').hide();
+            current.blur();
+            $('body').append($('#tooltiptext'));
+            $('body').append($('#tooltiptext-b'));
+            current.focus();
+        }
+    });
+}
+
+function validateInput(i){
+    let text = '';
+    if($('#'+i).attr('mandatory') == 'true'){
+        text += 'This input is mandatory.'
+        if($('#'+i).val() == ''){
+            $('#'+i).attr('validity', 'false');
+        }
+    }
+    if($('#'+i).val().length < $('#'+i).attr('charlength')){
+        if(text != '') text += '<br />';
+        text += "Should be " + $('#'+i).attr('charlength') + " characters or more.";
+        if($('#'+i).val().length < $('#'+i).attr('charlength')){
+            $('#'+i).attr('validity', 'false');
+        }
+    }
+    if($('#'+i).val() != '' && $('#'+i).val().length >= $('#'+i).attr('charlength')){
+         $('#'+i).attr('validity', 'true');
+    }
+    if($('#'+i).attr('numeric') == 'true'){
+        if(isNaN($('#'+i).val())){
+            if(text != '') text += '<br />';
+            text += 'Input should be "Numeric".';
+            $('#'+i).attr('validity', 'false');
+        }
+    }else if($('#'+i).attr('alphanumeric') == 'true'){
+        if(!isNaN($('#'+i).val())){
+            if(text != '') text += '<br />';
+            text += 'Input should be "AlphaNumeric".';
+            $('#'+i).attr('validity', 'false');
+        }
+    }else if($('#'+i).attr('numeric') == 'false' && $('#'+i).attr('alphanumeric') == 'false'){
+        if(text != '') text += '<br />';
+        text += "Should be in " + $('#'+i).attr('regexformat') + " format.";
+    }
+    $('#tooltiptext').html(text);
+    $('#tooltiptext-b').html(text);
+    if($('#'+i).attr('validity') == 'false'){
+        if($('#'+i).attr('tabindex') == 1 || $('#'+i).attr('tabindex') == 2){
+            $('#'+i).parent().append($('#tooltiptext-b'));
+        }else{
+            $('#'+i).parent().append($('#tooltiptext'));
+        }
+    } 
 }
 
 function writejsonoutput(){
@@ -206,8 +306,11 @@ function writejsonoutput(){
     for(let i in input){
         data[i] = $('#'+i).val();
     }
+    var filePath = inputs[index];
+    var fileName = filePath.replace(/^.*[\\\/]/, '').replace(".json", '');
+
     let inputfolder = JSON.parse(fs.readFileSync('./src/environment/config/config.json','utf8'));
-    fs.writeFileSync(inputfolder.output + "output " + (index + 1) + ".json", JSON.stringify(data), function(err){
+    fs.writeFileSync(inputfolder.output + "output " + fileName + ".json", JSON.stringify(data), function(err){
         if(err) throw err;
     });
     loadnextfile();

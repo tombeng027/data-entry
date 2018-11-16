@@ -28,6 +28,12 @@
   "win": {
     "target": "NSIS"
   },
+  "linux": {
+    "target": [
+      "AppImage",
+      "deb"
+    ]
+  },
   "dependencies": {
     "bootstrap": "^4.1.2",
     "electron-packager": "^12.2.0",

@@ -4,51 +4,52 @@ body{
 
 #container{
     margin: .2%;
+    height: 700px;
 }
 
 #viewer{
-    display:block;
-    float: left;
     background-color: white;
     width: 60.5%;
-    height: 700px;
-    padding: .2%;
-    margin: .2% 0 .2% .2%;
+    height: 100%;
     overflow: hidden;
 }
 
 #imagecontainer{
     cursor: move;
     border: 1px solid #d6d6d6;
-    width: 99%;
+    width: 100%;
     height: 100%;
 }
 
-#handle-ew{
-    width: 3px;
+.handle-ew{
+    width: 5px;
     height: 100%;
     border: .5px ridge lightgray;
-    position: absolute;
+    background-color: black;
+    /* position: absolute; */
     cursor: ew-resize;
 }
 
-#handle-ns{
+.handle-ns{
     width: 100%;
-    height: 2px;
+    height: 5px;
     border: .5px ridge lightgray;
-    position: absolute;
+    background-color: black;
+    /* position: absolute; */
     cursor: ns-resize;
 }
 
 #inputcontainer{
-    display: block;
-    float: left;
     width: 39%;
-    height: 700px;
-    margin: .2% .2% .2% 0;
     overflow: scroll; 
     border: 1px solid #d6d6d6;
     text-align: center;
+} 
+
+.hiddenimage{
+    overflow: hidden;
+    width: 0;
+    height:0;
 }
 
 #inputcontainer div{
@@ -63,6 +64,63 @@ body{
     background-color: rgba(30, 143, 255, 0.432);
     z-index: 5;
     border: 1px 1px solid white;
+}
+
+/* Tooltip text */
+#tooltiptext, #tooltiptext-b{
+    visibility: visible;
+    width: auto;
+    background-color: rgb(253, 55, 55);
+    color: black;
+    text-align: center;
+    padding: 3px 5px;
+    border-radius: 6px;
+
+    /* Position the tooltip text */
+    position: absolute;
+    z-index: 10;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+
+    /* Fade in tooltip */
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
+#tooltiptext-b{
+    bottom: -200%;
+}
+
+/* Tooltip arrow */
+#tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgb(253, 55, 55) transparent transparent transparent;
+}
+#tooltiptext-b::before {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent rgb(253, 55, 55) transparent;
+}
+#proceedmodal{
+    position:absolute;
+    background-color: white;
+    border: 1px solid lightgray;
+    border-radius: 25px;
+    padding: 15px;
+    top: 40%;
+    left: 40%;
 }
 
 @media only screen and (max-width: 1280px) {
