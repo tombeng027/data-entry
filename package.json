@@ -9,9 +9,11 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
-  "build":{
-    "productName":"Data Entry Prototype",
-    "extraFiles": ["./src/environment/config/config.json"]
+  "build": {
+    "productName": "Data Entry Prototype",
+    "extraFiles": [
+      "./src/environment/config/config.json"
+    ]
   },
   "keywords": [
     "data",
@@ -38,6 +40,6 @@
     "bootstrap": "^4.1.2",
     "electron-packager": "^12.2.0",
     "jquery": "^3.3.1",
-    "jquery-ui": "file:./lib/jquery-ui"
+    "tiff.js": "^1.0.0"
   }
 }

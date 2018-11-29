@@ -1,18 +1,25 @@
 
 const remote = require('electron').remote;
-const fs = require('fs');
+var Tiff = require('tiff.js');
+const fs = require('fs'); 
 const $ = require('jquery');
 const config = JSON.parse(fs.readFileSync('./src/environment/config/config.json','utf8'));
 //variable for manipulation the current image being processed and the shared collection of file inputs and images
 var index = 0;
+let img = new Image();
+let tifimg;
+let tiffile;
+let tifinput;
+let tifdataurl;
 //variable of the original image loaded with its original size
 var hiddenimage = $('#image');
-var img = new Image();
 //variable of the div elements that contain the image viewer and the input forms
 var imagecontainer = $('#imagecontainer');
 var inputcontainer = $('#inputcontainer');
 var viewer = $('#viewer');
 var container = $('#container');
+var yesbutton = $('#proceedbuttonyes');
+var nobutton = $('#proceedbuttonno');
 //variables for creating the input forms and the image viewer
 var input;
 var cx = imagecontainer.outerWidth()/1000; //variable that relates the image viewer and the original image
@@ -31,7 +38,7 @@ function loadFile(){
         //window.close()
         $('#nofile').show();
     }
-
+    let fileExtension = images[index].substring(images[index].length - 3);
     if(config.orientation.rows == true){
         viewer.css('width','99.5%');
         viewer.css('height','500px');
@@ -39,8 +46,16 @@ function loadFile(){
         inputcontainer.css('height', '190px');
     }
     //loading of the image
-    img.src = images[index];
-    hiddenimage.append(img);
+    if( fileExtension == "jpg"){
+        img.src = images[index];
+        hiddenimage.append(img);
+    }else if(fileExtension == "tif"){
+        tiffile = images[index];
+        tifinput = fs.readFileSync(tiffile);
+        tifimg = new Tiff({buffer:tifinput});
+        // hiddenimage.append(tifimg.toCanvas());
+        tifdataurl = tifimg.toCanvas().toDataURL();
+    }
 
     //creating resize handle
     if(config.orientation.rows == false){
@@ -62,7 +77,7 @@ function loadFile(){
     let x = 1;
     for(let i in input){
         let inputprep = $('<div class="input-group">');
-        let inputlinetitle = $('<span class="input-group-addon">').append(input[i].placeholder);
+        let inputlinetitle = $('<span class="input-group-addon">').append(input[i].FieldName);
         //inputlinetitle.css();
         inputprep.css('float','left');
         if(config.inputorientation.rows == true){
@@ -81,6 +96,28 @@ function loadFile(){
         inputline.attr('validity', 'true');
         inputprep.append(inputline);
         inputline.attr('tabIndex', x++);
+        let parentchilddiv;
+        for(let o in input[i].ParentChild){
+            if(o != "Enabler" && o != "validation"){
+                if(input[i].ParentChild != undefined){
+                    parentchilddiv = document.createElement('div');
+                    parentchilddiv.setAttribute('class','input-group');
+                    parentchilddiv.style.margin = 0;
+                }
+                let childinput = document.createElement('input');
+                let label = document.createElement('span');
+                label.setAttribute('class','input-group-addon');
+                label.append(input[i].ParentChild[o].ChildName);
+                parentchilddiv.append(label);
+                childinput.setAttribute('id', o);
+                childinput.setAttribute('type', 'text');
+                childinput.setAttribute('class','form-control form-control-sm');
+                childinput.setAttribute('disabled','true');
+                childinput.setAttribute('tabIndex', x++);
+                parentchilddiv.append(childinput);
+                inputprep.append(parentchilddiv);
+            }
+        }
         inputdiv.append(inputprep);
     }
 
@@ -95,16 +132,26 @@ function loadFile(){
     inputcontainer.append(savebutton);
 
     //creation of the image viewer
-    img.onload = function(){
-        imagecontainer.css("backgroundImage", "url('" + img.src + "')");
-        imagecontainer.css("backgroundRepeat", "no-repeat");
-        if(config.blockscroll == false){
-            imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
-        }else{
-            imagecontainer.css("backgroundSize", parseInt(imagecontainer.css('width')) + "px " + parseInt(imagecontainer.css('height'))*2 + "px");
+    if(fileExtension == "jpg"){
+        img.onload = function(){
+            imagecontainer.css("backgroundImage", "url('" + img.src + "')");
+            imagecontainer.css("backgroundRepeat", "no-repeat");
+            if(config.blockscroll == false){
+                imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
+            }else{
+                imagecontainer.css("backgroundSize", parseInt(imagecontainer.css('width')) + "px " + parseInt(imagecontainer.css('height'))*2 + "px");
+            }
+            addEvents();
         }
-        
-        addEvents();
+    }else if(fileExtension == "tif"){
+            imagecontainer.css("backgroundImage", "url('" + tifdataurl + "')");
+            imagecontainer.css("backgroundRepeat", "no-repeat");
+            if(config.blockscroll == false){
+                imagecontainer.css("backgroundSize", (tifimg.width()*cx) + "px " + (tifimg.height()*cy) + "px");
+            }else{
+                imagecontainer.css("backgroundSize", parseInt(imagecontainer.css('width')) + "px " + parseInt(imagecontainer.css('height'))*2 + "px");
+            }
+            addEvents();
     }
 }
 
@@ -119,6 +166,7 @@ function addValidations(inputline,i){
         inputline.attr(key,input[i].validation[key]);
     }
     inputline.attr('title', title);
+    inputline.attr('disabled', input[i].Locked);
 }
 //functions to resize the viewer and inputcontainer divs
 function initResize() {
@@ -200,7 +248,7 @@ function addEvents(){
         //event when text box is out of focus
         $('#'+i).blur((event)=>{
             //remove highlight when out of focus
-            $('#imagecontainer').empty();
+            imagecontainer.empty();
         });
         
         $('#'+i).keyup((event)=>{
@@ -219,8 +267,19 @@ function addEvents(){
                 }else{
                     $('#proceedmodal').show();
                     current.blur();
-                    $('#proceedbuttonyes').focus();
+                    yesbutton.focus();
                     addEventonProceed($next, current,highlight);
+                }
+            }
+            if(input[i].ParentChild != undefined && $('#'+i).val().toUpperCase() ==
+             input[i].ParentChild.Enabler.toUpperCase()){
+                for(let o in input[i].ParentChild){
+                    $('#'+o).removeAttr('disabled');
+                }
+            }else if(input[i].ParentChild != undefined && $('#'+i).val().toUpperCase() != 
+             input[i].ParentChild.Enabler.toUpperCase()){
+                for(let o in input[i].ParentChild){
+                    $('#'+o).attr('disabled','true');
                 }
             }
             localStorage.setItem(i,$('#'+i).val());
@@ -228,10 +287,10 @@ function addEvents(){
     }
 }
 
-function addEventonProceed($next, current,highlight){
-    $('#proceedbuttonyes').keyup((event)=>{
-        if(event.keyCode == 39){
-            $('#proceedbuttonno').focus();
+function addEventonProceed($next, current){
+    yesbutton.keyup((event)=>{
+        if(event.keyCode == 39 || event.keyCode == 9){
+            nobutton.focus();
         }
         if(event.keyCode == 13){
             $('#proceedmodal').hide();
@@ -241,9 +300,9 @@ function addEventonProceed($next, current,highlight){
             $next.focus();
         }
     });
-    $('#proceedbuttonno').keyup((event)=>{
-        if(event.keyCode == 37){
-            $('#proceedbuttonno').focus();
+    nobutton.keyup((event)=>{
+        if(event.keyCode == 37 || event.keyCode == 9){
+            yesbutton.focus();
         }
         if(event.keyCode == 13){
             $('#proceedmodal').hide();
@@ -253,6 +312,8 @@ function addEventonProceed($next, current,highlight){
             current.focus();
         }
     });
+    yesbutton.keydown((e)=>{if(e.which == 9)e.preventDefault();});
+    nobutton.keydown((e)=>{if(e.which == 9)e.preventDefault();});
 }
 
 function validateInput(i){
@@ -304,7 +365,16 @@ function writejsonoutput(){
     let data = {};
     
     for(let i in input){
-        data[i] = $('#'+i).val();
+        if(input[i].ParentChild != undefined){
+            data[i] = {};
+            data[i][i] = $('#'+i).val();
+           for(let o in input[i].ParentChild){
+                console.log($('#'+o).val());
+                data[i][o] = $('#'+o).val();
+           } 
+        }else{
+            data[i] = $('#'+i).val();
+        }
     }
     var filePath = inputs[index];
     var fileName = filePath.replace(/^.*[\\\/]/, '').replace(".json", '');
@@ -321,6 +391,7 @@ function loadnextfile(){
     index++;
     //remove the previous image and form to set up for the next image and form
     hiddenimage.empty();
+    $('#handle').remove();
     imagecontainer.css('backgroundImage', 'none');
     inputcontainer.empty();
     loadFile();
