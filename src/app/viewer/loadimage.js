@@ -78,6 +78,7 @@ function loadFile(){
     for(let i in input){
         let inputprep = $('<div class="input-group">');
         let inputlinetitle = $('<span class="input-group-addon">').append(input[i].FieldName);
+        //if(input[i].validation.mandatory) inputlinetitle.css('color','red');
         //inputlinetitle.css();
         inputprep.css('float','left');
         if(config.inputorientation.rows == true){
@@ -110,6 +111,7 @@ function loadFile(){
                 label.append(input[i].ParentChild[o].ChildName);
                 parentchilddiv.append(label);
                 childinput.setAttribute('id', o);
+                addChildValidations(childinput,i);
                 childinput.setAttribute('type', 'text');
                 childinput.setAttribute('class','form-control form-control-sm');
                 childinput.setAttribute('disabled','true');
@@ -168,6 +170,18 @@ function addValidations(inputline,i){
     inputline.attr('title', title);
     inputline.attr('disabled', input[i].Locked);
 }
+function addChildValidations(childinput,i){
+    var title = '';
+    for(let key in input[i].ParentChild.validation){
+        if(input[i].ParentChild.validation[key] == true){
+            title += "\n" + key;
+         }else if(input[i].ParentChild.validation[key] != false && !isNaN(input[i].ParentChild.validation[key])){
+             title += "\nShould be " + input[i].ParentChild.validation[key] + " characters";
+         }
+         childinput.setAttribute(key,input[i].ParentChild.validation[key]);
+    }
+    childinput.setAttribute('title',title); 
+}
 //functions to resize the viewer and inputcontainer divs
 function initResize() {
     document.addEventListener('mousemove', Resize, false);
@@ -210,7 +224,7 @@ function addEvents(){
         let highlightwidth = input[i].toprightx - lowerleftx;
         let highlight;
         //variable to place the current word input in position in the image viewer
-        let w = ((lowerleftx * cx) - 200)*-1; //value should be negative
+        let w = ((lowerleftx * cx) - 200)*-1; 
         let h = ((lowerlefty * cy) - 200)*-1;
         if(config.textatbottom == true){
             top = 180 + (highlightheight*cy); left = 195;
@@ -221,7 +235,7 @@ function addEvents(){
         }
                 
         //event when textbox is on focus
-        $('#'+i).focus((event)=>{
+        $('#'+i).focus(()=>{
             if(config.blockscroll == false){
                 //setting position of the image in the image viewer
                 imagecontainer.css("backgroundPosition",  w + "px " + h + "px");
@@ -274,6 +288,25 @@ function addEvents(){
             if(input[i].ParentChild != undefined && $('#'+i).val().toUpperCase() ==
              input[i].ParentChild.Enabler.toUpperCase()){
                 for(let o in input[i].ParentChild){
+                    $('#'+o).keyup((e)=>{
+                        if(e.keyCode == 13){
+                            if($('#'+o).is('input')){
+                                validateInput(o);
+                            }
+                            //logs for checking the actions when enter is pressed in the input  ; 
+                            let z = parseInt($('#'+o).attr('tabIndex')) + 1;
+                            let current = $('[tabIndex=' + (z - 1) +']');
+                            let $next = $('[tabIndex=' + z +']');
+                            if($('#'+o).attr('validity') == 'true'){
+                                $next.focus();  
+                            }else{
+                                $('#proceedmodal').show();
+                                current.blur();
+                                yesbutton.focus();
+                                addEventonProceed($next, current,highlight);
+                            }
+                        }
+                    });
                     $('#'+o).removeAttr('disabled');
                 }
             }else if(input[i].ParentChild != undefined && $('#'+i).val().toUpperCase() != 
@@ -283,7 +316,7 @@ function addEvents(){
                 }
             }
             localStorage.setItem(i,$('#'+i).val());
-        });  
+        });
     }
 }
 
@@ -398,6 +431,62 @@ function loadnextfile(){
 }
 
 $(document).ready(loadFile);
+
+//for rotating and zooming of image using arrows keys
+var keydown_control = false;
+var keydown_arrow_up = false;
+var keydown_arrow_down = false;
+var keydown_arrow_left = false;
+var keydown_arrow_right = false;
+var rotate = 0;
+var scale = 1;
+$(document).ready(function(){
+    let body = $('body');
+    body.on('keydown',(e)=>{
+        if(e.key == "Control"){
+            keydown_control = true;
+        }else if(e.key == "ArrowUp"){
+            keydown_arrow_up = true;
+        }else if(e.key == "ArrowDown"){
+            keydown_arrow_down = true;
+        }else if(e.key == "ArrowLeft"){
+            keydown_arrow_left = true;
+        }else if(e.key == "ArrowRight"){
+            keydown_arrow_right = true;
+        }
+        //image manipulation
+        if(keydown_control){
+            if(keydown_arrow_up){
+                scale += .1;
+                imagecontainer.css('transform', 'scale(' + scale + ')');
+            }else if(keydown_arrow_down){
+                scale -= .1;
+                imagecontainer.css('transform', 'scale(' + scale + ')');
+            }else if(keydown_arrow_left){ 
+                rotate -= 90;
+                imagecontainer.css('transform','rotate('+ rotate +'deg)');
+            }else if(keydown_arrow_right){
+                rotate += 90;
+                imagecontainer.css('transform','rotate('+ rotate +'deg)')
+            }
+        }
+    });
+    body.on('keyup',(e)=>{
+        if(e.key == "Control"){
+            keydown_control = false;
+        }else if(e.key == "ArrowUp"){
+            keydown_arrow_up = false;
+        }else if(e.key == "ArrowDown"){
+            keydown_arrow_down = false;
+        }else if(e.key == "ArrowLeft"){
+            keydown_arrow_left = false;
+        }else if(e.key == "ArrowRight"){
+            keydown_arrow_right = false;
+        }
+    });
+
+});
+
 //make image viewer draggable
 $(document).ready(function(){
     var $bg = $('#imagecontainer'),

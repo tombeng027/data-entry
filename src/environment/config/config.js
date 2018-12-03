@@ -16,6 +16,9 @@ function setupConfig(){
     if(config.inputorientation.rows == true){
         $('#onelineinputs').click();
     }
+    if(config.blockscroll == true){
+        $('#sectionscrolling').click();
+    }
 
     $('#apply').click((event)=>{
         if($('#imageDirectory')[0].files[0] != undefined){
@@ -33,6 +36,7 @@ function setupConfig(){
         config.fullscreen =  $('#fullscreen').prop('checked');
         config.orientation.rows =  $('#horizontalview').prop('checked');
         config.inputorientation.rows =  $('#onelineinputs').prop('checked');
+        config.blockscroll = $('#sectionscrolling').prop('checked');
         if(restartRequired == false) restartRequired = !(isfullscreen == config.fullscreen);
     });
 
