@@ -17,7 +17,7 @@ function createWindow(){
     mainWindow.on('closed', () => {
         mainWindow = null
     })
-
+    global.mainWindow = mainWindow;
     compileInput();
 }
 
@@ -28,7 +28,7 @@ app.on('window-all-closed', () => {
         app.quit();
         mainWindow.removeAllListeners('close');
       }
-})
+});
 
 //context menu set up
 const menu = new Menu()
@@ -63,6 +63,7 @@ function compileInput(){
 
     global.images = images;
     global.inputs = inputs;
+    global.shared = {index:0};
 }
 
  //menu set up
@@ -72,14 +73,18 @@ function compileInput(){
       submenu: [{
         label:'Settings',
         click: ()=>{
-          configWindow = new BrowserWindow({ width:300, height:400 });
-          configWindow.loadFile('./src/environment/config/config.html');
-          configWindow.setResizable(false);
-          configWindow.setMenuBarVisibility(false);
-          global.configWindow = configWindow;
-          global.mainWindow = mainWindow;
+          if(global.configWindow == null){
+            configWindow = new BrowserWindow({parent:mainWindow,modal:true, width:300, height:400 });
+            configWindow.loadFile('./src/environment/config/config.html');
+            configWindow.setResizable(false);
+            configWindow.setMenuBarVisibility(false);
+            global.configWindow = configWindow;
+          }else{
+            configWindow.focus();
+          }
           configWindow.on('closed', () => {
-            configWindow = null
+            configWindow = null;
+            global.configWindow = null;
           });
         }
       },
@@ -87,6 +92,10 @@ function compileInput(){
         label: 'DevTools',
         role: 'toggledevtools'
       },
+      // {
+      //   label: 'Preview Image',
+      //   click
+      // },
       {
         label: 'Exit',
         role: 'close'

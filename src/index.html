@@ -27,6 +27,7 @@
         </div>
         <span id='tooltiptext'></span>
         <span id='tooltiptext-b'></span>
+        <div id='suggestbox' class='input-group'></div>
         <div id='proceedmodal' hidden=true>
             <h5>Input is Invalid.</h5>
             <p>Still Proceed to Next Line?</p>
@@ -35,10 +36,11 @@
                 <button id='proceedbuttonno' type="button" class="btn btn-danger prbtn" >NO</button>
             </div>
         </div>
+        <canvas id='hiddencanvas' hidden="true"></canvas>
     </body>
     <script>
         require('jquery');
-        require('./app/viewer/loadimage.js');
+        require('./app/loader/loadimage.js');
     </script>
     <script src="./assets/lib/jquery.min.js"></script>
     <script src="./assets/lib/bootstrap/js/bootstrap.min.js"></script>
