@@ -277,7 +277,6 @@ function addEvents(){
                 $('#'+i).focus(()=>{
                         //setting position of the image in the image viewer
                         imagecontainer.css("backgroundPosition",  w + "px " + h + "px");
-                        console.log(200/h);
                         //creating highlight box and position it on the word
                         highlight = $('<div class="highlightBox">');
                         highlight.css('width', (highlightwidth*cx) + "px");
@@ -295,45 +294,9 @@ function addEvents(){
                 });
                 //suggest box manipulation
                 $('#'+i).keydown((e)=>{
-                    if(suggestbox.children().length != 0){
-                        if(e.keyCode == 40){
-                            e.preventDefault();
-                            if(suggestindex < suggestbox.children().length){
-                                suggestindex++;
-                            }else{
-                                suggestindex = 0;
-                            }
-                            if(suggestindex == 0){
-                                suggestbox.children()[suggestindex].classList.add('active');
-                                $('#'+i).val(suggestbox.children()[index].innerHTML);
-                            }else if(suggestindex >= suggestbox.children().length){
-                                suggestbox.children()[(suggestindex -1)].classList.remove('active');
-                                $('#'+i).val("");                    
-                            }else{
-                                suggestbox.children()[suggestindex].classList.add('active');
-                                $('#'+i).val(suggestbox.children()[suggestindex].innerHTML);
-                                suggestbox.children()[(suggestindex - 1)].classList.remove('active');
-                            }
-                        }else if(e.keyCode == 38){
-                            e.preventDefault();
-                            if(suggestindex > 0){
-                                suggestindex--;
-                            }else{
-                                suggestindex = suggestbox.children().length;
-                            }
-                            if(suggestindex == (suggestbox.children().length - 1)){
-                                suggestbox.children()[suggestindex].classList.add('active');
-                                $('#'+i).val(suggestbox.children()[suggestindex].innerHTML);
-                            }else if(suggestindex == suggestbox.children().length){
-                                suggestbox.children()[0].classList.remove('active');
-                                $('#'+i).val("");                      
-                            }else{
-                                suggestbox.children()[suggestindex].classList.add('active');
-                                $('#'+i).val(suggestbox.children()[suggestindex].innerHTML);
-                                suggestbox.children()[(suggestindex + 1)].classList.remove('active');
-                            }
-                        }
-                    }   
+                    if(input[n][i].solrquery != undefined){
+                      addEventsSuggestBox(i,e);
+                    }
                 });
                 //events on keyup include events onenter, create proceedmodal, and validations
                 $('#'+i).keyup((event)=>{
@@ -360,6 +323,11 @@ function addEvents(){
                     $('#'+i).val().toUpperCase() == input[n][i].ParentChild.Enabler.toUpperCase()) ||
                     (input[n][i].ParentChild.Enabler == "" && $('#'+i).val() != ""))){
                         for(let o in input[n][i].ParentChild){
+                            $('#'+o).keydown((e)=>{
+                                if(input[n][i].ParentChild[o].solrquery != undefined){
+                                    addEventsSuggestBox(o,e);
+                                }
+                            });
                             $('#'+o).keyup((e)=>{
                                 if(e.keyCode == 13){
                                     if($('#'+o).is('input')){
@@ -377,7 +345,21 @@ function addEvents(){
                                         yesbutton.focus();
                                         addEventonProceed($next, current,highlight);
                                     }
+                                }  
+                                if(input[n][i].ParentChild[o].solrquery != null && e.keyCode != 40 && e.keyCode != 38){
+                                    suggestbox.empty();
+                                    suggestbox.hide();
+                                    $.ajax({url: input[n][i].ParentChild[o].solrquery + '*' + $('#'+o).val() + '*', success: function(result){
+                                        console.log(result);
+                                        if(result.response.docs.length != 0){
+                                            createSuggestBox(result.response.docs,o);
+                                            suggestbox.show()
+                                        }
+                                    }});
                                 }
+                            });
+                            $('#'+o).blur(()=>{
+                                suggestbox.hide();
                             });
                             $('#'+o).removeAttr('disabled');
                         }
@@ -403,6 +385,48 @@ function addEvents(){
             }
         }
     }
+}
+
+function addEventsSuggestBox(i,e){
+    if(suggestbox.children().length != 0){
+        if(e.keyCode == 40){
+            e.preventDefault();
+            if(suggestindex < suggestbox.children().length){
+                suggestindex++;
+            }else{
+                suggestindex = 0;
+            }
+            if(suggestindex == 0){
+                suggestbox.children()[suggestindex].classList.add('active');
+                $('#'+i).val(suggestbox.children()[index].innerHTML);
+            }else if(suggestindex >= suggestbox.children().length){
+                suggestbox.children()[(suggestindex -1)].classList.remove('active');
+                $('#'+i).val("");                    
+            }else{
+                suggestbox.children()[suggestindex].classList.add('active');
+                $('#'+i).val(suggestbox.children()[suggestindex].innerHTML);
+                suggestbox.children()[(suggestindex - 1)].classList.remove('active');
+            }
+        }else if(e.keyCode == 38){
+            e.preventDefault();
+            if(suggestindex > 0){
+                suggestindex--;
+            }else{
+                suggestindex = suggestbox.children().length;
+            }
+            if(suggestindex == (suggestbox.children().length - 1)){
+                suggestbox.children()[suggestindex].classList.add('active');
+                $('#'+i).val(suggestbox.children()[suggestindex].innerHTML);
+            }else if(suggestindex == suggestbox.children().length){
+                suggestbox.children()[0].classList.remove('active');
+                $('#'+i).val("");                      
+            }else{
+                suggestbox.children()[suggestindex].classList.add('active');
+                $('#'+i).val(suggestbox.children()[suggestindex].innerHTML);
+                suggestbox.children()[(suggestindex + 1)].classList.remove('active');
+            }
+        }
+    } 
 }
 
 function addEventonProceed($next, current){
