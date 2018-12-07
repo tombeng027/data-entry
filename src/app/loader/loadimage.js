@@ -290,6 +290,7 @@ function addEvents(){
                 $('#'+i).blur((event)=>{
                     //remove highlight when out of focus
                     imagecontainer.empty();
+                    suggestbox.empty();
                     suggestbox.hide();
                 });
                 //suggest box manipulation
@@ -323,11 +324,13 @@ function addEvents(){
                     $('#'+i).val().toUpperCase() == input[n][i].ParentChild.Enabler.toUpperCase()) ||
                     (input[n][i].ParentChild.Enabler == "" && $('#'+i).val() != ""))){
                         for(let o in input[n][i].ParentChild){
+                            //place suggest box under the child input texbox
                             $('#'+o).keydown((e)=>{
                                 if(input[n][i].ParentChild[o].solrquery != undefined){
                                     addEventsSuggestBox(o,e);
                                 }
                             });
+                            //events for keyup includes on enter, and suggestbox creation
                             $('#'+o).keyup((e)=>{
                                 if(e.keyCode == 13){
                                     if($('#'+o).is('input')){
@@ -346,6 +349,7 @@ function addEvents(){
                                         addEventonProceed($next, current,highlight);
                                     }
                                 }  
+                                //create suggest box for child input textbox
                                 if(input[n][i].ParentChild[o].solrquery != null && e.keyCode != 40 && e.keyCode != 38){
                                     suggestbox.empty();
                                     suggestbox.hide();
@@ -358,11 +362,15 @@ function addEvents(){
                                     }});
                                 }
                             });
+                            //hide suggest box
                             $('#'+o).blur(()=>{
                                 suggestbox.hide();
+                                suggestbox.empty();
                             });
+                            //enable child input
                             $('#'+o).removeAttr('disabled');
                         }
+                
                     }else if(input[n][i].ParentChild != undefined && ((input[n][i].ParentChild.Enabler != "" && 
                     $('#'+i).val().toUpperCase() != input[n][i].ParentChild.Enabler.toUpperCase()) || 
                     (input[n][i].ParentChild.Enabler == "" && $('#'+i).val() == ""))){
@@ -371,6 +379,7 @@ function addEvents(){
                         }
                     }
                     localStorage.setItem(i,$('#'+i).val());
+                    //create suggest box for field that has a query
                     if(input[n][i].solrquery != null && event.keyCode != 40 && event.keyCode != 38){
                         suggestbox.empty();
                         suggestbox.hide();
@@ -565,6 +574,7 @@ function createSuggestBox(result,i){
         resultarray.push(result[index][i.toLowerCase()]);
     }
     var unique = resultarray.filter( onlyUnique );
+    console.log(unique);
     for(let entry in unique){
         let suggestion = document.createElement('div');
         suggestion.append(unique[entry]);
