@@ -290,7 +290,6 @@ function addEvents(){
                 $('#'+i).blur((event)=>{
                     //remove highlight when out of focus
                     imagecontainer.empty();
-                    suggestbox.empty();
                     suggestbox.hide();
                 });
                 //suggest box manipulation
@@ -351,10 +350,8 @@ function addEvents(){
                                 }  
                                 //create suggest box for child input textbox
                                 if(input[n][i].ParentChild[o].solrquery != null && e.keyCode != 40 && e.keyCode != 38){
-                                    suggestbox.empty();
                                     suggestbox.hide();
                                     $.ajax({url: input[n][i].ParentChild[o].solrquery + '*' + $('#'+o).val() + '*', success: function(result){
-                                        console.log(result);
                                         if(result.response.docs.length != 0){
                                             createSuggestBox(result.response.docs,o);
                                             suggestbox.show()
@@ -365,7 +362,6 @@ function addEvents(){
                             //hide suggest box
                             $('#'+o).blur(()=>{
                                 suggestbox.hide();
-                                suggestbox.empty();
                             });
                             //enable child input
                             $('#'+o).removeAttr('disabled');
@@ -381,7 +377,6 @@ function addEvents(){
                     localStorage.setItem(i,$('#'+i).val());
                     //create suggest box for field that has a query
                     if(input[n][i].solrquery != null && event.keyCode != 40 && event.keyCode != 38){
-                        suggestbox.empty();
                         suggestbox.hide();
                         $.ajax({url: input[n][i].solrquery + '*' + $('#'+i).val() + '*', success: function(result){
                             if(result.response.docs.length != 0){
@@ -548,14 +543,12 @@ function loadnextfile(){
     imagecontainer.css('backgroundImage', 'none');
     inputcontainer.empty();
     loadFile();
-    console.log(remote.getGlobal('shared').index)
 }
 
 $(document).ready(loadFile);
 
 //create preview window to show the whole document can be zoomed and rotated
 function createPreviewWindow(){
-    let fileExtension = images[index].substring(images[index].length - 3);
     previewWindow = new BrowserWindow({parent:remote.getGlobal('mainWindow'),
     modal:true,width:1300,height:720, resizable:false});
     previewWindow.loadFile('./src/app/viewer/viewer.html');
@@ -569,12 +562,12 @@ function createPreviewWindow(){
 
 //create autosuggest box
 function createSuggestBox(result,i){
+    suggestbox.empty();
     let resultarray = [];
     for(let index in result){
         resultarray.push(result[index][i.toLowerCase()]);
     }
     var unique = resultarray.filter( onlyUnique );
-    console.log(unique);
     for(let entry in unique){
         let suggestion = document.createElement('div');
         suggestion.append(unique[entry]);
