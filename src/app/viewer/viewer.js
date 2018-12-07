@@ -9,6 +9,7 @@ var keydown_arrow_up = false;
 var keydown_arrow_down = false;
 var keydown_arrow_left = false;
 var keydown_arrow_right = false;
+var keydown_reset = false;
 var rotate = 0;
 var scale = 1;
 var left = 30;
@@ -46,9 +47,7 @@ $(document).ready(function(){
             }else if(e.key == "ArrowRight"){
                 keydown_arrow_right = true;
             }else if(e.key == 'r'){
-                image.css('transform', 'rotate('+ 0 +'deg) scale(' + 1 + ')');
-                image.css('top','0%');
-                image.css('left','30%');
+                keydown_reset = true;
             }else if(e.key == 'Escape'){
                 window.close();
             }
@@ -66,6 +65,14 @@ $(document).ready(function(){
                 }else if(keydown_arrow_right){
                     rotate += 90;
                     image.css('transform', 'rotate('+ rotate +'deg) scale(' + scale + ')');
+                }else if(keydown_reset){
+                    image.css('transform', 'rotate('+ 0 +'deg) scale(' + 1 + ')');
+                    image.css('top','0%');
+                    image.css('left','30%');
+                    rotate = 0;
+                    scale = 1;
+                    top = 0;
+                    left = 30;
                 }
             }else if(!keydown_control){
                 if(keydown_arrow_up){
@@ -104,6 +111,8 @@ $(document).ready(function(){
                 keydown_arrow_left = false;
             }else if(e.key == "ArrowRight"){
                 keydown_arrow_right = false;
+            }else if(e.key == 'r'){
+                keydown_reset = false;
             }
         });  
 });
