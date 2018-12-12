@@ -276,6 +276,8 @@ function addEvents(){
 
                 //event when textbox is on focus
                 $('#'+i).focus(()=>{
+                        //clear container for highlights left over
+                        imagecontainer.empty();
                         //setting position of the image in the image viewer
                         imagecontainer.css("backgroundPosition",  w + "px " + h + "px");
                         //creating highlight box and position it on the word
@@ -324,6 +326,31 @@ function addEvents(){
                     $('#'+i).val().toUpperCase() == input[n][i].ParentChild.Enabler.toUpperCase()) ||
                     (input[n][i].ParentChild.Enabler == "" && $('#'+i).val() != ""))){
                         for(let o in input[n][i].ParentChild){
+                            // get parameters to set highlightbox size and position
+                            // lowerleftx = input[n][ctrl].ParentChild[o].lowerleftx;
+                            // lowerlefty = input[n][ctrl].ParentChild[o].lowerlefty;
+                            // toprightx = input[n][ctrl].ParentChild[o].toprightx;
+                            // toprighty = input[n][ctrl].ParentChild[o].toprighty;
+                            // highlightheight = lowerlefty - input[n][ctrl].ParentChild[o].toprighty;
+                            // highlightwidth = input[n][ctrl].ParentChild[o].toprightx - lowerleftx; 
+
+                            // w = ((lowerleftx * cx) - 100)*-1; 
+                            // h = ((toprighty * cy) - 180)*-1;
+                            //highlight this child field in the viewer
+                            $('#'+o).focus(()=>{
+                                //clear container for highlights left over
+                                imagecontainer.empty();
+                                //setting position of the image in the image viewer
+                                imagecontainer.css("backgroundPosition",  w + "px " + h + "px");
+                                //creating highlight box and position it on the word
+                                highlight = $('<div class="highlightBox">');
+                                highlight.css('width', (highlightwidth*cx) + "px");
+                                highlight.css('height', (highlightheight*cy) + "px");
+                                imagecontainer.append(highlight);
+                                highlight.css('position', "relative");
+                                highlight.css('top', top + "px");
+                                highlight.css('left', left + "px");
+                            });
                             //place suggest box under the child input texbox
                             $('#'+o).keydown((e)=>{
                                 if(input[n][i].ParentChild[o].solrquery != undefined){
@@ -362,6 +389,7 @@ function addEvents(){
                             });
                             //hide suggest box
                             $('#'+o).blur(()=>{
+                                imagecontainer.empty();
                                 suggestbox.hide();
                             });
                             //enable child input
@@ -580,11 +608,12 @@ function createSuggestBox(result,i){
     suggestbox.insertAfter($('#'+i));;
     suggestindex = suggestbox.children().length;
 }
-
-function onlyUnique(value, index, self) { 
-    return self.indexOf(value) === index;
+//show only unique entries in suggestbox //in case it still shows duplicates check if the entry is a string or an object
+function onlyUnique(value, uniqueIndex, self) { 
+    return self.indexOf(value) === uniqueIndex;
 }
 
+//image controls
 $(document).ready(function(){
     let body = $('body');
     body.on('keydown',(e)=>{

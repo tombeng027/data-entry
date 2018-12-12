@@ -1,6 +1,7 @@
 const {app, BrowserWindow, Menu, MenuItem, ipcMain, shell} = require('electron');
 const fs = require('fs');
 const $ = require('jquery');
+
 let mainWindow;
 const config = JSON.parse(fs.readFileSync('./src/environment/config/config.json','utf8'));
 let configWindow;
@@ -9,14 +10,29 @@ function createWindow(){
     mainWindow = new BrowserWindow({ minWidth:600, minHeight:750,width:1366, height:720, frame:config.frame, fullscreen:config.fullscreen, webPreferences: {
         plugins: true
       }});
-
-    if(config.fullscreen == false)mainWindow.maximize();
-    mainWindow.loadFile('./src/index.html');
-    mainWindow.setMenuBarVisibility(false);
-    mainWindow.setAutoHideMenuBar(true);
-    mainWindow.on('closed', () => {
+    
+    loginWindow = new BrowserWindow({ parent:mainWindow, modal:true, width:350 , height:350, frame:false,
+       fullscreen:false, webPreferences: { plugins: true }})
+    loginWindow.loadFile('./src/app/sso/ssologin.html');
+    loginWindow.setMenuBarVisibility(false);
+    mainWindow.hide();
+    global.login = {loggedIn:false};
+    loginWindow.on('closed',()=>{
+      if(global.login.loggedIn){
+        if(config.fullscreen == false)mainWindow.maximize();
+        mainWindow.show();
+        mainWindow.loadFile('./src/index.html');
+        mainWindow.setMenuBarVisibility(false);
+        mainWindow.setAutoHideMenuBar(true);
+        mainWindow.on('closed', () => {
         mainWindow = null
-    })
+        })
+      }else{
+        mainWindow.close();
+        mainWindow = null;
+      }
+    });
+    
     global.mainWindow = mainWindow;
     compileInput();
 }
