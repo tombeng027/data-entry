@@ -32,9 +32,11 @@ function createWindow(){
         mainWindow = null;
       }
     });
-    
+    global.shared = {index:0};
     global.mainWindow = mainWindow;
-    compileInput();
+    if(config.onBPO == false){
+      compileInput();
+    }
 }
 
 app.on('ready', createWindow);
@@ -79,7 +81,7 @@ function compileInput(){
 
     global.images = images;
     global.inputs = inputs;
-    global.shared = {index:0};
+
 }
 
  //menu set up

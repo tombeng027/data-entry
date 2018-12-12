@@ -28,6 +28,7 @@ var input;
 var cx = imagecontainer.outerWidth()/1000; //variable that relates the image viewer and the original image
 var cy = imagecontainer.outerHeight()/700; 
 var top; var left;
+let fileExtension;
 //variables for checking if all inputs are done and its time to load the next image
 var savebutton;
 //function to load the image, create the input forms and the image viewer
@@ -50,30 +51,37 @@ const sectioncoords = 'sectionCoordinates';
 
 //function to load file
 function loadFile(){
-     //check to close the window if all files have been processed
-    if(index == images.length){
-        //window.close()
-        $('#nofile').show();
+    if(config.onBPO == false){
+        //check to close the window if all files have been processed
+        if(index == images.length){
+            //window.close()
+            $('#nofile').show();
+        }
+        fileExtension = images[index].substring(images[index].length - 3);
+        //loading of the image
+        if( fileExtension == "jpg"){
+            img.src = images[index];
+            hiddenimage.append(img);
+        }else if(fileExtension == "tif"){
+            tiffile = images[index];
+            tifinput = fs.readFileSync(tiffile);
+            tifimg = new Tiff({buffer:tifinput});
+            // hiddenimage.append(tifimg.toCanvas());
+            tifdataurl = tifimg.toCanvas().toDataURL();
+        }
+        //parsing of the json for the input forms
+        input = JSON.parse(fs.readFileSync(inputs[index], 'utf8'));
     }
-    let fileExtension = images[index].substring(images[index].length - 3);
     if(config.orientation.rows == true){
         viewer.css('width','99.5%');
         viewer.css('height','500px');
         inputcontainer.css('width', '99.5%');
         inputcontainer.css('height', '190px');
     }
-    //loading of the image
-    if( fileExtension == "jpg"){
-        img.src = images[index];
-        hiddenimage.append(img);
-    }else if(fileExtension == "tif"){
-        tiffile = images[index];
-        tifinput = fs.readFileSync(tiffile);
-        tifimg = new Tiff({buffer:tifinput});
-        // hiddenimage.append(tifimg.toCanvas());
-        tifdataurl = tifimg.toCanvas().toDataURL();
-    }
+    createViewerAndForms();
+}
 
+function createViewerAndForms(){
     //creating resize handle
     if(config.orientation.rows == false){
         let handle = $('<div id="handle" class="handle-ew">');
@@ -87,8 +95,6 @@ function loadFile(){
         handle.css('top', parseInt(viewer.css('height').replace('px',''))  + 'px'); 
         handle.on('mousedown',initResize);
     }
-    //parsing of the json for the input forms
-    input = JSON.parse(fs.readFileSync(inputs[index], 'utf8'));
     //creation of the input forms
     var inputdiv = $('<div class="form-group form-group-sm">');
     let x = 1;
@@ -177,6 +183,7 @@ function loadFile(){
             addEvents();
     }
 }
+
 //adds validations to the parent element
 function addValidations(inputline,n, i){
     var title = '';
