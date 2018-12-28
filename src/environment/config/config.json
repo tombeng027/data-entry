@@ -1,1 +1,31 @@
-{"image":"C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\images/","input":"C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\inputs/","output":"C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\outputs/","fullscreen":false,"frame":true,"textatbottom":null,"devmode":false,"onBPO":false,"orientation":{"rows":false},"inputorientation":{"rows":true},"blockscroll":false}
+{
+	"image": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\images/",
+	"input": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\inputs/",
+	"output": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\outputs/",
+	"fullscreen": false,
+	"frame": true,
+	"devmode": false,
+	"qualMode": false,
+	"outputFileExtension": "json",
+	"onBPO": true,
+	"BPOqueries": {
+		"getCurrentWorkload": "http://CYBELE:8080/bpo5/req/workers/bcx01/nodes/en1/workload?sort=startproctime",
+		"getElement": "http://CYBELE:8080/bpo5/req/workers/bcx01/nodes/en1/elements",
+		"completeElement": "http://CYBELE:8080/bpo5/req/workers/bcx01/nodes/en1/?nextNodeId=en2",
+		"completeInputJSON": {
+			"productionOutputUnits": {
+				"FIELD": {
+					"outputCount": 0,
+					"errorCount": 0
+				}
+			}
+		}
+	},
+	"orientation": {
+		"rows": false
+	},
+	"inputorientation": {
+		"rows": true
+	},
+	"blockscroll": false
+}

@@ -25,16 +25,16 @@ function createWindow(){
         mainWindow.setMenuBarVisibility(false);
         mainWindow.setAutoHideMenuBar(true);
         mainWindow.on('closed', () => {
-        mainWindow = null
+        mainWindow = null;
         })
       }else{
         mainWindow.close();
         mainWindow = null;
       }
     });
-    global.shared = {index:0};
+    global.shared = {index:0,images:undefined};
     global.mainWindow = mainWindow;
-    if(config.onBPO == false){
+    if(!config.onBPO){
       compileInput();
     }
 }
@@ -50,7 +50,11 @@ app.on('window-all-closed', () => {
 
 //context menu set up
 const menu = new Menu()
-menu.append(new MenuItem({ id:'reset', label: 'Reset', role:'reload'}))
+if(!config.onBPO){
+  menu.append(new MenuItem({ id:'reset', label: 'Reset', role:'reload'}));
+}else{
+  menu.append(new MenuItem({ id:'gde', label: 'GDE' }));
+}
 
 app.on('browser-window-created', (event, win) => {
   win.webContents.on('context-menu', (e, params) => {
@@ -67,21 +71,20 @@ var images = [];
 var inputs = [];
 
 function compileInput(){
-    //compilation of inputs 
-    fs.readdir(config.image, (err, dir) => {
-            for(let i in dir){
-                images.push(config.image + dir[i]);
-            }
-    });
-    fs.readdir(config.input, (err, dir) => {
-            for(let i in dir){
-                inputs.push(config.input + dir[i]);
-            }
-    });
+      //compilation of inputs 
+      readDir(config.image, images);
+      readDir(config.input, inputs);
 
     global.images = images;
     global.inputs = inputs;
+}
 
+function readDir(data,container){
+  fs.readdir(data, (err, dir) => {
+      for(let i in dir){
+          container.push(data + dir[i]);
+      }
+  });
 }
 
  //menu set up

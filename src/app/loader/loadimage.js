@@ -1,12 +1,14 @@
 
 const {BrowserWindow} = require('electron').remote;
+const path = require('path');
 const remote = require('electron').remote;
 const Tiff = require('tiff.js');
 const fs = require('fs'); 
 const $ = require('jquery');
 const config = JSON.parse(fs.readFileSync('./src/environment/config/config.json','utf8'));
 //variable for manipulation the current image being processed and the shared collection of file inputs and images
-var index = remote.getGlobal('shared').index;
+var index = 0;
+var imageIndex = remote.getGlobal('shared').index;
 let img = new Image();
 let tifimg;
 let tiffile;
@@ -14,6 +16,7 @@ let tifinput;
 let tifdataurl;
 //variable of the original image loaded with its original size
 var hiddenimage = $('#image');
+let bpoElement;
 //variable of the div elements that contain the image viewer and the input forms
 var imagecontainer = $('#imagecontainer');
 var inputcontainer = $('#inputcontainer');
@@ -22,6 +25,9 @@ var container = $('#container');
 var yesbutton = $('#proceedbuttonyes');
 var nobutton = $('#proceedbuttonno');
 var suggestbox = $('#suggestbox');
+var nofileModal = $('#nofile');
+var nofileMsg = $('#nofilemsg');
+var nextElementButton = $('#getNextElement');
 let suggestindex;
 //variables for creating the input forms and the image viewer
 var input;
@@ -31,11 +37,14 @@ var top; var left;
 let fileExtension;
 //variables for checking if all inputs are done and its time to load the next image
 var savebutton;
-//function to load the image, create the input forms and the image viewer
-var images = remote.getGlobal('images');
-var inputs = remote.getGlobal('inputs');
+//variables to load the image, create the input forms and the image viewer
+var images = [];
+var inputs = [];
+var imageFolder = "images/";
+var inputFolder = "inputs/";
 //variables for rotating and zooming of image using arrows keys
 var keydown_control = false;
+var keydown_alt = false;
 var keydown_arrow_up = false;
 var keydown_arrow_down = false;
 var keydown_arrow_left = false;
@@ -45,40 +54,137 @@ var keydown_reset = false;
 var rotate = 0;
 var scale = 1;
 var previewWindow;
+//User Variables
+var elementID;
 //constants
 const sectioncoords = 'sectionCoordinates';
 
+async function setInputsAndImages(){
+    let data;
+    if(config.onBPO){
+            data  = await new Promise((resolve,reject)=>{
+                $.get( config.BPOqueries.getCurrentWorkload ).done(resolve);
+            });
+            if(data.elements.length == 0){
+                data = await new Promise((resolve,reject)=>{
+                        $.get( config.BPOqueries.getElement ).done(resolve).fail(()=>{
+                                nofileMsg.html('No Existing Elements in Node')
+                                nofileModal.show();
+                                nextElementButton.on('click',completeToNextNode);
+                        });
+                });
+                bpoElement = data.element;
+                elementID = data.element.elementId;             
+            }else{
+                bpoElement = data.elements[0]; 
+                elementID = data.elements[0].elementId; 
+            }
+            //wait to make sure images url are already compiled before proceding to generate page
+            await new Promise((resolve)=>{
+                fs.readdir(bpoElement.fileLocation + imageFolder, (err, dir) => {
+                    for(let i in dir){
+                        images.push(bpoElement.fileLocation + imageFolder + dir[i]);
+                    }
+                    resolve();
+                });
+            });
 
+            await new Promise((resolve)=>{
+                fs.readdir(bpoElement.fileLocation + inputFolder, (err, dir) => {
+                    for(let i in dir){
+                        inputs.push(bpoElement.fileLocation + inputFolder + dir[i]);
+                    }
+                    resolve();
+                });
+            });
+            remote.getGlobal('shared').images = images;
+    }else{
+        images = remote.getGlobal('images');
+        inputs = remote.getGlobal('inputs'); 
+    }
+    try{
+        //parsing of the json for the input forms
+        input = JSON.parse(fs.readFileSync(inputs[index], 'utf8'));
+    }finally{
+        loadFile();
+    }
+}
+    
+
+//TODO complete to next node
+$.postJSON = function(url, data, callback) {
+    return $.ajax({
+        headers: { 
+            'Accept': 'application/json',
+            'Content-Type': 'application/json' 
+        },
+        type: 'POST',
+        url: url,
+        data: JSON.stringify(data),
+        dataType: 'application/json',
+        success: callback
+    });
+};
+
+//TODO GEt the app to load the next element
+async function completeToNextNode(){
+            nofileModal.hide();
+            nextElementButton.off('click');
+            images = [];
+            inputs = [];
+            imageIndex = 0;
+            bpoElement = undefined;           
+            setInputsAndImages();             
+}
+ 
 //function to load file
 function loadFile(){
-    if(config.onBPO == false){
         //check to close the window if all files have been processed
-        if(index == images.length){
-            //window.close()
-            $('#nofile').show();
-        }
-        fileExtension = images[index].substring(images[index].length - 3);
+        fileExtension = images[imageIndex].substring(images[imageIndex].length - 3);
         //loading of the image
         if( fileExtension == "jpg"){
-            img.src = images[index];
+            img.src = images[imageIndex];
             hiddenimage.append(img);
         }else if(fileExtension == "tif"){
-            tiffile = images[index];
+            tiffile = images[imageIndex];
             tifinput = fs.readFileSync(tiffile);
             tifimg = new Tiff({buffer:tifinput});
             // hiddenimage.append(tifimg.toCanvas());
             tifdataurl = tifimg.toCanvas().toDataURL();
         }
-        //parsing of the json for the input forms
-        input = JSON.parse(fs.readFileSync(inputs[index], 'utf8'));
+        if(config.orientation.rows == true){
+            viewer.css('width','99.5%');
+            viewer.css('height','500px');
+            inputcontainer.css('width', '99.5%');
+            inputcontainer.css('height', '190px');
+        }
+        createViewerAndForms();    
+        if(config.qualMode){
+            loadValues();
+        }
+}
+
+function loadValues(){
+    let test = images[imageIndex].split('/');
+    let filename = test[test.length -1];
+    let outputFileExtension = config.outputFileExtension;
+    let outputFilePath = config.output + "output " + 
+        filename.substring(0, filename.length - 3) + outputFileExtension;
+    let output;
+    try{
+        output = JSON.parse(fs.readFileSync(outputFilePath,'utf8'));
+    }catch(err){
+        alert(err);
     }
-    if(config.orientation.rows == true){
-        viewer.css('width','99.5%');
-        viewer.css('height','500px');
-        inputcontainer.css('width', '99.5%');
-        inputcontainer.css('height', '190px');
+    for(let i in output){
+        if(typeof output[i] == 'string'){
+            $('#'+i).val(output[i]);
+        }else if(typeof output[i] == 'object'){
+            for(let o in output[i]){
+                $('#'+o).val(output[i][o]);
+            }
+        }
     }
-    createViewerAndForms();
 }
 
 function createViewerAndForms(){
@@ -102,7 +208,7 @@ function createViewerAndForms(){
         for(let i in input[n]){
             if(i != sectioncoords){
                 let inputprep = $('<div class="input-group">');
-                let inputlinetitle = $('<span class="input-group-addon">').append(input[n][i].FieldName);
+                let inputlinetitle = $('<span class="input-group-addon">').append(input[n][i].fieldName);
                 if(input[n][i].validation.mandatory) inputlinetitle.css('color','rgb(253, 107, 107)');
                 //inputlinetitle.css();
                 inputprep.css('float','left');
@@ -122,27 +228,27 @@ function createViewerAndForms(){
                 inputline.attr('validity', 'true');
                 inputprep.append(inputline);
                 inputline.attr('tabIndex', x++);
-                let parentchilddiv;
-                for(let o in input[n][i].ParentChild){
+                let parentChilddiv;
+                for(let o in input[n][i].parentChild){
                     if(o != "Enabler" && o != "validation"){
-                        if(input[n][i].ParentChild != undefined){
-                            parentchilddiv = document.createElement('div');
-                            parentchilddiv.setAttribute('class','input-group');
-                            parentchilddiv.style.margin = 0;
+                        if(input[n][i].parentChild != undefined){
+                            parentChilddiv = document.createElement('div');
+                            parentChilddiv.setAttribute('class','input-group');
+                            parentChilddiv.style.margin = 0;
                         }
                         let childinput = document.createElement('input');
                         let label = document.createElement('span');
                         label.setAttribute('class','input-group-addon');
-                        label.append(input[n][i].ParentChild[o].ChildName);
-                        parentchilddiv.append(label);
+                        label.append(input[n][i].parentChild[o].ChildName);
+                        parentChilddiv.append(label);
                         childinput.setAttribute('id', o);
                         addChildValidations(childinput,n,i,o);
                         childinput.setAttribute('type', 'text');
                         childinput.setAttribute('class','form-control form-control-sm');
                         childinput.setAttribute('disabled','true');
                         childinput.setAttribute('tabIndex', x++);
-                        parentchilddiv.append(childinput);
-                        inputprep.append(parentchilddiv);
+                        parentChilddiv.append(childinput);
+                        inputprep.append(parentChilddiv);
                     }
                 }
                 inputdiv.append(inputprep);
@@ -165,21 +271,13 @@ function createViewerAndForms(){
         img.onload = function(){
             imagecontainer.css("backgroundImage", "url('" + img.src + "')");
             imagecontainer.css("backgroundRepeat", "no-repeat");
-            // if(config.blockscroll == false){
                 imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
-            // }else{
-            //     imagecontainer.css("backgroundSize", parseInt(imagecontainer.css('width')) + "px " + parseInt(imagecontainer.css('height'))*2 + "px");
-            // }
             addEvents();
         }
     }else if(fileExtension == "tif"){
             imagecontainer.css("backgroundImage", "url('" + tifdataurl + "')");
             imagecontainer.css("backgroundRepeat", "no-repeat");
-            // if(config.blockscroll == false){
                 imagecontainer.css("backgroundSize", (tifimg.width()*cx) + "px " + (tifimg.height()*cy) + "px");
-            // }else{
-            //     imagecontainer.css("backgroundSize", parseInt(imagecontainer.css('width')) + "px " + parseInt(imagecontainer.css('height'))*2 + "px");
-            // }
             addEvents();
     }
 }
@@ -195,19 +293,18 @@ function addValidations(inputline,n, i){
         }
         inputline.attr(key,input[n][i].validation[key]);
     }
-    inputline.attr('title', title);
-    inputline.attr('disabled', input[n][i].Locked);
+    inputline.attr('title', title); 
 }
 //adds validations to the child element
 function addChildValidations(childinput,n,i){
     var title = '';
-    for(let key in input[n][i].ParentChild.validation){
-        if(input[n][i].ParentChild.validation[key] == true){
+    for(let key in input[n][i].parentChild.validation){
+        if(input[n][i].parentChild.validation[key] == true){
             title += "\n" + key;
-         }else if(input[n][i].ParentChild.validation[key] != false && !isNaN(input[n][i].ParentChild.validation[key])){
-             title += "\nShould be " + input[n][i].ParentChild.validation[key] + " characters";
+         }else if(input[n][i].parentChild.validation[key] != false && !isNaN(input[n][i].parentChild.validation[key])){
+             title += "\nShould be " + input[n][i].parentChild.validation[key] + " characters";
          }
-         childinput.setAttribute(key,input[n][i].ParentChild.validation[key]);
+         childinput.setAttribute(key,input[n][i].parentChild.validation[key]);
     }
     childinput.setAttribute('title',title); 
 }
@@ -249,10 +346,10 @@ function addEvents(){
         for(let i in input[n]){
             if(i != sectioncoords){
                 //variable for position and size of the highlight box image viewer background image 
-                let lowerleftx;
-                let lowerlefty;
-                let toprightx;
-                let toprighty;
+                let lowerLeftx;
+                let lowerLefty;
+                let topRightx;
+                let topRighty;
                 let highlightheight;
                 let highlightwidth;
                 let ctrl;
@@ -261,25 +358,19 @@ function addEvents(){
                 }else{
                     ctrl = sectioncoords;
                 }
-                lowerleftx = input[n][ctrl].lowerleftx;
-                lowerlefty = input[n][ctrl].lowerlefty;
-                toprightx = input[n][ctrl].toprightx;
-                toprighty = input[n][ctrl].toprighty;
-                highlightheight = lowerlefty - input[n][ctrl].toprighty;
-                highlightwidth = input[n][ctrl].toprightx - lowerleftx; 
+                lowerLeftx = input[n][ctrl].lowerLeftx;
+                lowerLefty = input[n][ctrl].lowerLefty;
+                topRightx = input[n][ctrl].topRightx;
+                topRighty = input[n][ctrl].topRighty;
+                highlightheight = lowerLefty - input[n][ctrl].topRighty;
+                highlightwidth = input[n][ctrl].topRightx - lowerLeftx; 
 
                 let highlight;
                 //variable to place the current word input in position in the image viewer
-                let w = ((lowerleftx * cx) - 100)*-1; 
-                let h = ((toprighty * cy) - 180)*-1;
+                let w = ((lowerLeftx * cx) - 100)*-1; 
+                let h = ((topRighty * cy) - 180)*-1;
 
-                if(config.textatbottom == true){
-                    top = 180 + (highlightheight*cy); left = 95;
-                }else if(config.textatbottom == false){
-                    top = 180; left = 95 + (highlightwidth*cx);
-                }else{
-                    top = 182; left = 98;
-                }
+                top = 182; left = 98;
 
                 //event when textbox is on focus
                 $('#'+i).focus(()=>{
@@ -329,20 +420,20 @@ function addEvents(){
                             addEventonProceed($next, current,highlight);
                         }
                     }
-                    if(input[n][i].ParentChild != undefined && ( (input[n][i].ParentChild.Enabler != "" && 
-                    $('#'+i).val().toUpperCase() == input[n][i].ParentChild.Enabler.toUpperCase()) ||
-                    (input[n][i].ParentChild.Enabler == "" && $('#'+i).val() != ""))){
-                        for(let o in input[n][i].ParentChild){
+                    if(input[n][i].parentChild != undefined && ( (input[n][i].parentChild.Enabler != "" && 
+                    $('#'+i).val().toUpperCase() == input[n][i].parentChild.Enabler.toUpperCase()) ||
+                    (input[n][i].parentChild.Enabler == "" && $('#'+i).val() != ""))){
+                        for(let o in input[n][i].parentChild){
                             // get parameters to set highlightbox size and position
-                            // lowerleftx = input[n][ctrl].ParentChild[o].lowerleftx;
-                            // lowerlefty = input[n][ctrl].ParentChild[o].lowerlefty;
-                            // toprightx = input[n][ctrl].ParentChild[o].toprightx;
-                            // toprighty = input[n][ctrl].ParentChild[o].toprighty;
-                            // highlightheight = lowerlefty - input[n][ctrl].ParentChild[o].toprighty;
-                            // highlightwidth = input[n][ctrl].ParentChild[o].toprightx - lowerleftx; 
+                            // lowerLeftx = input[n][ctrl].parentChild[o].lowerLeftx;
+                            // lowerLefty = input[n][ctrl].parentChild[o].lowerLefty;
+                            // topRightx = input[n][ctrl].parentChild[o].topRightx;
+                            // topRighty = input[n][ctrl].parentChild[o].topRighty;
+                            // highlightheight = lowerLefty - input[n][ctrl].parentChild[o].topRighty;
+                            // highlightwidth = input[n][ctrl].parentChild[o].topRightx - lowerLeftx; 
 
-                            // w = ((lowerleftx * cx) - 100)*-1; 
-                            // h = ((toprighty * cy) - 180)*-1;
+                            // w = ((lowerLeftx * cx) - 100)*-1; 
+                            // h = ((topRighty * cy) - 180)*-1;
                             //highlight this child field in the viewer
                             $('#'+o).focus(()=>{
                                 //clear container for highlights left over
@@ -360,7 +451,7 @@ function addEvents(){
                             });
                             //place suggest box under the child input texbox
                             $('#'+o).keydown((e)=>{
-                                if(input[n][i].ParentChild[o].solrquery != undefined){
+                                if(input[n][i].parentChild[o].solrquery != undefined){
                                     addEventsSuggestBox(o,e);
                                 }
                             });
@@ -384,9 +475,9 @@ function addEvents(){
                                     }
                                 }  
                                 //create suggest box for child input textbox
-                                if(input[n][i].ParentChild[o].solrquery != null && e.keyCode != 40 && e.keyCode != 38){
+                                if(input[n][i].parentChild[o].solrquery != null && e.keyCode != 40 && e.keyCode != 38){
                                     suggestbox.hide();
-                                    $.ajax({url: input[n][i].ParentChild[o].solrquery + '*' + $('#'+o).val() + '*', success: function(result){
+                                    $.ajax({url: input[n][i].parentChild[o].solrquery + $('#'+o).val().toLowerCase() + '*', success: function(result){
                                         if(result.response.docs.length != 0){
                                             createSuggestBox(result.response.docs,o);
                                             suggestbox.show()
@@ -403,10 +494,10 @@ function addEvents(){
                             $('#'+o).removeAttr('disabled');
                         }
                 
-                    }else if(input[n][i].ParentChild != undefined && ((input[n][i].ParentChild.Enabler != "" && 
-                    $('#'+i).val().toUpperCase() != input[n][i].ParentChild.Enabler.toUpperCase()) || 
-                    (input[n][i].ParentChild.Enabler == "" && $('#'+i).val() == ""))){
-                        for(let o in input[n][i].ParentChild){
+                    }else if(input[n][i].parentChild != undefined && ((input[n][i].parentChild.Enabler != "" && 
+                    $('#'+i).val().toUpperCase() != input[n][i].parentChild.Enabler.toUpperCase()) || 
+                    (input[n][i].parentChild.Enabler == "" && $('#'+i).val() == ""))){
+                        for(let o in input[n][i].parentChild){
                             $('#'+o).attr('disabled','true');
                         }
                     }
@@ -414,7 +505,7 @@ function addEvents(){
                     //create suggest box for field that has a query
                     if(input[n][i].solrquery != null && event.keyCode != 40 && event.keyCode != 38){
                         suggestbox.hide();
-                        $.ajax({url: input[n][i].solrquery + '*' + $('#'+i).val() + '*', success: function(result){
+                        $.ajax({url: input[n][i].solrquery + $('#'+i).val().toLowerCase() + '*', success: function(result){
                             if(result.response.docs.length != 0){
                                 createSuggestBox(result.response.docs,i);
                                 suggestbox.show()
@@ -438,7 +529,7 @@ function addEventsSuggestBox(i,e){
             }
             if(suggestindex == 0){
                 suggestbox.children()[suggestindex].classList.add('active');
-                $('#'+i).val(suggestbox.children()[index].innerHTML);
+                $('#'+i).val(suggestbox.children()[suggestindex].innerHTML);
             }else if(suggestindex >= suggestbox.children().length){
                 suggestbox.children()[(suggestindex -1)].classList.remove('active');
                 $('#'+i).val("");                    
@@ -548,10 +639,10 @@ function writejsonoutput(){
     
     for(let n in input){
         for(let i in input[n]){
-            if(input[n][i].ParentChild != undefined){
+            if(input[n][i].parentChild != undefined){
                 data[i] = {};
                 data[i][i] = $('#'+i).val();
-               for(let o in input[n][i].ParentChild){
+               for(let o in input[n][i].parentChild){
                     data[i][o] = $('#'+o).val();
                } 
             }else{
@@ -567,21 +658,28 @@ function writejsonoutput(){
         if(err) throw err;
     });
     loadnextfile();
+    let completeQuery = config.BPOqueries.completeElement;
+    let queryUrl =  completeQuery.slice(0,completeQuery.indexOf('?',0) - 1) +
+            "/" + elementID + completeQuery.slice(completeQuery.indexOf('?',0));
+    $.postJSON(queryUrl,config.BPOqueries.completeInputJSON).done();
 }
 
 //function to remove the current input form and image, and load the next one in the input folder
 function loadnextfile(){
-    index++;
-    remote.getGlobal('shared').index = index;
     //remove the previous image and form to set up for the next image and form
+    clearWindow();
+    nofileMsg.html('Element Done');
+    setTimeout(nofileModal.show(),500);
+    nextElementButton.on('click',completeToNextNode);
+}
+function clearWindow(){
     hiddenimage.empty();
     $('#handle').remove();
     imagecontainer.css('backgroundImage', 'none');
     inputcontainer.empty();
-    loadFile();
+    localStorage.clear(); 
 }
-
-$(document).ready(loadFile);
+$(document).ready(setInputsAndImages);
 
 //create preview window to show the whole document can be zoomed and rotated
 function createPreviewWindow(){
@@ -638,8 +736,21 @@ $(document).ready(function(){
             keydown_preview = true;
         }else if(e.key == "r"){
             keydown_reset = true;
+        }else if(e.key == '>'){
+            if(imageIndex < images.length - 1){
+                imageIndex++;
+            }else{
+                imageIndex = 0;
+            }
+            changeImage();
+        }else if(e.key == '<'){
+            if(imageIndex > 0){
+                imageIndex--;
+            }else{
+                imageIndex = images.length - 1;
+            }
+            changeImage();
         }
-
         //image manipulation
         if(keydown_control){
             if(keydown_arrow_up){
@@ -683,8 +794,23 @@ $(document).ready(function(){
             keydown_reset = false;
         }
     });
-
 });
+function changeImage(){
+    remote.getGlobal('shared').index = imageIndex;
+    fileExtension = images[imageIndex].substring(images[imageIndex].length - 3);
+        if( fileExtension == "jpg"){
+            img.src = images[imageIndex];
+            imagecontainer.css('backgroundImage', 'url(' + img.src + ')');
+            imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
+        }else if(fileExtension == "tif"){
+            tiffile = images[imageIndex];
+            tifinput = fs.readFileSync(tiffile);
+            tifimg = new Tiff({buffer:tifinput});
+            tifdataurl = tifimg.toCanvas().toDataURL();
+            imagecontainer.css('backgroundImage', 'url(' + tifdataurl + ')');
+            imagecontainer.css("backgroundSize", (tifimg.width()*cx) + "px " + (tifimg.height()*cy) + "px");
+        }       
+}
 
 //make image viewer draggable
 $(document).ready(function(){

@@ -2,6 +2,7 @@ var remote = require('electron').remote;
 const $ = require('jquery');
 var Tiff = require('tiff.js');
 const fs = require('fs'); 
+const config = JSON.parse(fs.readFileSync('./src/environment/config/config.json','utf8'));
 
 //for rotating and zooming of image using arrows keys
 var keydown_control = false;
@@ -12,13 +13,18 @@ var keydown_arrow_right = false;
 var keydown_reset = false;
 var rotate = 0;
 var scale = 1;
-var left = 30;
+var left = 0;
 var top = 0;
 var image = $('#imgpreview');
 
 function loadFile(){
-        let images = remote.getGlobal('images');
+        let images;
         let index = remote.getGlobal('shared').index;
+        if(config.onBPO == 'false'){
+            images = remote.getGlobal('images');        
+        }else{
+            images = remote.getGlobal('shared').images;
+        }
         let fileExtension = images[index].substring(images[index].length - 3);
         if( fileExtension == "jpg"){
                 image.attr('src', images[index]);
@@ -27,7 +33,6 @@ function loadFile(){
                 let tifinput = fs.readFileSync(tiffile);
                 let tifimg = new Tiff({buffer:tifinput});
                 let tifdataurl = tifimg.toCanvas().toDataURL();
-                console.log(tifdataurl)
                 image.attr('src', tifdataurl);
         }
 }
@@ -68,11 +73,11 @@ $(document).ready(function(){
                 }else if(keydown_reset){
                     image.css('transform', 'rotate('+ 0 +'deg) scale(' + 1 + ')');
                     image.css('top','0%');
-                    image.css('left','30%');
+                    image.css('left','0%');
                     rotate = 0;
                     scale = 1;
                     top = 0;
-                    left = 30;
+                    left = 0;
                 }
             }else if(!keydown_control){
                 if(keydown_arrow_up){
@@ -82,10 +87,10 @@ $(document).ready(function(){
                         top++;
                         image.css('top', top + '%');
                     }else if(keydown_arrow_left){ 
-                        left--;
+                        left++;
                         image.css('left', left + '%');
                     }else if(keydown_arrow_right){
-                        left++;
+                        left--;
                         image.css('left', left + '%');
                     }   
                 }
