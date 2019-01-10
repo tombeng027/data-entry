@@ -2,6 +2,8 @@
 	"image": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\images/",
 	"input": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\inputs/",
 	"output": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\outputs/",
+	"imageFolder":"/images/",
+	"inputFolder":"/inputs/",
 	"fullscreen": false,
 	"frame": true,
 	"devmode": false,
@@ -9,9 +11,11 @@
 	"outputFileExtension": "json",
 	"onBPO": true,
 	"BPOqueries": {
-		"getCurrentWorkload": "http://CYBELE:8080/bpo5/req/workers/bcx01/nodes/en1/workload?sort=startproctime",
-		"getElement": "http://CYBELE:8080/bpo5/req/workers/bcx01/nodes/en1/elements",
-		"completeElement": "http://CYBELE:8080/bpo5/req/workers/bcx01/nodes/en1/?nextNodeId=en2",
+		"nodeID":"payslip",
+		"schemaFolder":"C://Users/nbriones/Documents/TASKS/December 2018/schema/",
+		"getCurrentWorkload": "http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/workload?sort=startproctime",
+		"getElement": "http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/elements",
+		"completeElement": "http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/?nextNodeId=done",
 		"completeInputJSON": {
 			"productionOutputUnits": {
 				"FIELD": {

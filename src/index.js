@@ -32,7 +32,7 @@ function createWindow(){
         mainWindow = null;
       }
     });
-    global.shared = {index:0,images:undefined};
+    global.shared = {index:0,images:undefined,workerid:undefined};
     global.mainWindow = mainWindow;
     if(!config.onBPO){
       compileInput();

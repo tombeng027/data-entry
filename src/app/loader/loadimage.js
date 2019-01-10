@@ -40,8 +40,8 @@ var savebutton;
 //variables to load the image, create the input forms and the image viewer
 var images = [];
 var inputs = [];
-var imageFolder = "images/";
-var inputFolder = "inputs/";
+var imageFolder = config.imageFolder; // set in config file to define the name of the image folder of each element
+var inputFolder = config.inputFolder; // set in config file to define the name of the input folder of each element
 //variables for rotating and zooming of image using arrows keys
 var keydown_control = false;
 var keydown_alt = false;
@@ -56,6 +56,8 @@ var scale = 1;
 var previewWindow;
 //User Variables
 var elementID;
+var workerid = remote.getGlobal('shared').workerid
+var nodeID = config.BPOqueries.nodeID
 //constants
 const sectioncoords = 'sectionCoordinates';
 
@@ -63,14 +65,19 @@ async function setInputsAndImages(){
     let data;
     if(config.onBPO){
             data  = await new Promise((resolve,reject)=>{
-                $.get( config.BPOqueries.getCurrentWorkload ).done(resolve);
+                    $.get( config.BPOqueries.getCurrentWorkload.replace('workerid', workerid).replace('nodeid', nodeID) ).done(resolve).fail((result)=>{
+                        alert('error ' + result.responseJSON.errorCode);
+                        window.close();
+                    });
             });
             if(data.elements.length == 0){
                 data = await new Promise((resolve,reject)=>{
-                        $.get( config.BPOqueries.getElement ).done(resolve).fail(()=>{
-                                nofileMsg.html('No Existing Elements in Node')
-                                nofileModal.show();
-                                nextElementButton.on('click',completeToNextNode);
+                        $.get( config.BPOqueries.getElement.replace('workerid', workerid).replace('nodeid', nodeID) ).done(resolve).fail((result)=>{
+                                alert('error ' + result.responseJSON.errorCode);
+                                window.close();
+                                // nofileMsg.html('No Existing Elements in Node');
+                                // nofileModal.show();
+                                // nextElementButton.on('click',completeToNextNode);
                         });
                 });
                 bpoElement = data.element;
@@ -85,18 +92,20 @@ async function setInputsAndImages(){
                     for(let i in dir){
                         images.push(bpoElement.fileLocation + imageFolder + dir[i]);
                     }
+                    if(err != null) alert(err);
                     resolve();
                 });
             });
 
-            await new Promise((resolve)=>{
-                fs.readdir(bpoElement.fileLocation + inputFolder, (err, dir) => {
-                    for(let i in dir){
-                        inputs.push(bpoElement.fileLocation + inputFolder + dir[i]);
-                    }
-                    resolve();
-                });
-            });
+            // await new Promise((resolve)=>{
+            //     fs.readdir(bpoElement.fileLocation + inputFolder, (err, dir) => {
+            //         for(let i in dir){
+            //             inputs.push(bpoElement.fileLocation + inputFolder + dir[i]);
+            //         }
+            //         if(err != null) alert(err);
+            //         resolve();
+            //     });
+            // });
             remote.getGlobal('shared').images = images;
     }else{
         images = remote.getGlobal('images');
@@ -104,7 +113,7 @@ async function setInputsAndImages(){
     }
     try{
         //parsing of the json for the input forms
-        input = JSON.parse(fs.readFileSync(inputs[index], 'utf8'));
+        input = JSON.parse(fs.readFileSync(config.BPOqueries.schemaFolder + nodeID + '.json', 'utf8'));
     }finally{
         loadFile();
     }
@@ -650,7 +659,7 @@ function writejsonoutput(){
             }
         }
     }
-    var filePath = inputs[index];
+    var filePath = config.BPOqueries.schemaFolder;
     var fileName = filePath.replace(/^.*[\\\/]/, '').replace(".json", '');
 
     let inputfolder = JSON.parse(fs.readFileSync('./src/environment/config/config.json','utf8'));
@@ -658,7 +667,7 @@ function writejsonoutput(){
         if(err) throw err;
     });
     loadnextfile();
-    let completeQuery = config.BPOqueries.completeElement;
+    let completeQuery = config.BPOqueries.completeElement.replace('workerid', workerid).replace('nodeid', nodeID);
     let queryUrl =  completeQuery.slice(0,completeQuery.indexOf('?',0) - 1) +
             "/" + elementID + completeQuery.slice(completeQuery.indexOf('?',0));
     $.postJSON(queryUrl,config.BPOqueries.completeInputJSON).done();
