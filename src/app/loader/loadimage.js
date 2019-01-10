@@ -41,7 +41,9 @@ var savebutton;
 var images = [];
 var inputs = [];
 var imageFolder = config.imageFolder; // set in config file to define the name of the image folder of each element
-var inputFolder = config.inputFolder; // set in config file to define the name of the input folder of each element
+var inputFolder; 
+if(!config.onBPO) inputFolder = config.inputFolder; // set in config file to define the name of the input folder of each element
+var outputFolder = config.outputFolder;
 //variables for rotating and zooming of image using arrows keys
 var keydown_control = false;
 var keydown_alt = false;
@@ -661,11 +663,17 @@ function writejsonoutput(){
     }
     var filePath = config.BPOqueries.schemaFolder;
     var fileName = filePath.replace(/^.*[\\\/]/, '').replace(".json", '');
-
-    let inputfolder = JSON.parse(fs.readFileSync('./src/environment/config/config.json','utf8'));
-    fs.writeFileSync(inputfolder.output + "output " + fileName + ".json", JSON.stringify(data), function(err){
-        if(err) throw err;
-    });
+    if(!config.onBPO){
+        let inputfolder = JSON.parse(fs.readFileSync('./src/environment/config/config.json','utf8'));
+        fs.writeFileSync(inputfolder.output + "output " + fileName + ".json", JSON.stringify(data), function(err){
+            if(err) throw err;
+        });
+    }else{
+        console.log(bpoElement.fileLocation + outputFolder + bpoElement.elementId + ".json");
+        fs.writeFileSync(bpoElement.fileLocation + outputFolder + bpoElement.elementId + ".json", JSON.stringify(data), function(err){
+            if(err) throw err;
+        });
+    }
     loadnextfile();
     let completeQuery = config.BPOqueries.completeElement.replace('workerid', workerid).replace('nodeid', nodeID);
     let queryUrl =  completeQuery.slice(0,completeQuery.indexOf('?',0) - 1) +
@@ -678,7 +686,7 @@ function loadnextfile(){
     //remove the previous image and form to set up for the next image and form
     clearWindow();
     nofileMsg.html('Element Done');
-    setTimeout(nofileModal.show(),500);
+    setTimeout(()=>{nofileModal.show()},500);
     nextElementButton.on('click',completeToNextNode);
 }
 function clearWindow(){

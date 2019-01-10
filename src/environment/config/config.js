@@ -21,17 +21,19 @@ function setupConfig(){
     }
 
     $('#apply').click((event)=>{
-        if($('#imageDirectory')[0].files[0] != undefined){
-            config.image = $('#imageDirectory')[0].files[0].path + '/';
-            restartRequired = true;
-        }
-        if($('#inputDirectory')[0].files[0] != undefined){ 
-            config.input = $('#inputDirectory')[0].files[0].path + '/';
-            restartRequired = true;
-        }
-        if($('#outputDirectory')[0].files[0] != undefined){
-            config.output = $('#outputDirectory')[0].files[0].path + '/';
-            restartRequired = true;
+        if(!config.onBPO){
+            if($('#imageDirectory')[0].files[0] != undefined){
+                config.image = $('#imageDirectory')[0].files[0].path + '/';
+                restartRequired = true;
+            }
+            if($('#inputDirectory')[0].files[0] != undefined){ 
+                config.input = $('#inputDirectory')[0].files[0].path + '/';
+                restartRequired = true;
+            }
+            if($('#outputDirectory')[0].files[0] != undefined){
+                config.output = $('#outputDirectory')[0].files[0].path + '/';
+                restartRequired = true;
+            }
         }
         config.fullscreen =  $('#fullscreen').prop('checked');
         config.orientation.rows =  $('#horizontalview').prop('checked');

@@ -3,7 +3,7 @@
 	"input": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\inputs/",
 	"output": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\outputs/",
 	"imageFolder":"/images/",
-	"inputFolder":"/inputs/",
+	"outputFolder":"outputs\\",
 	"fullscreen": false,
 	"frame": true,
 	"devmode": false,
