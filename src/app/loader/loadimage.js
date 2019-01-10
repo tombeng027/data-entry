@@ -3,7 +3,7 @@ const {BrowserWindow} = require('electron').remote;
 const path = require('path');
 const remote = require('electron').remote;
 const Tiff = require('tiff.js');
-const fs = require('fs'); 
+const fs = require('fs-extra'); 
 const $ = require('jquery');
 const config = JSON.parse(fs.readFileSync('./src/environment/config/config.json','utf8'));
 //variable for manipulation the current image being processed and the shared collection of file inputs and images
@@ -37,6 +37,7 @@ var top; var left;
 let fileExtension;
 //variables for checking if all inputs are done and its time to load the next image
 var savebutton;
+var exceptionButton;
 //variables to load the image, create the input forms and the image viewer
 var images = [];
 var inputs = [];
@@ -75,11 +76,14 @@ async function setInputsAndImages(){
             if(data.elements.length == 0){
                 data = await new Promise((resolve,reject)=>{
                         $.get( config.BPOqueries.getElement.replace('workerid', workerid).replace('nodeid', nodeID) ).done(resolve).fail((result)=>{
-                                alert('error ' + result.responseJSON.errorCode);
-                                window.close();
-                                // nofileMsg.html('No Existing Elements in Node');
-                                // nofileModal.show();
-                                // nextElementButton.on('click',completeToNextNode);
+                                if(result.responseJSON.errorCode != 463){
+                                    alert('error ' + result.responseJSON.errorCode);
+                                    window.close();
+                                }else{
+                                    nofileMsg.html('No Existing Elements in Node');
+                                    nofileModal.show();
+                                    nextElementButton.on('click',completeToNextNode);
+                                }
                         });
                 });
                 bpoElement = data.element;
@@ -271,26 +275,38 @@ function createViewerAndForms(){
     //create save button
     savebutton = $('<button type="button" class="btn btn-sm btn-primary">');
     savebutton.position('relative');
-    savebutton.css('margin','10% 30%');
+    savebutton.css('margin','10% 30% 10% 5%');
     savebutton.attr('tabIndex',x)
     savebutton.append('SAVE');
     savebutton.click(writejsonoutput);
     inputcontainer.append(savebutton);
+    //create exception button
+    exceptionButton = $('<button type="button" class="btn btn-sm btn-danger">')
+    exceptionButton.position('relative');
+    exceptionButton.append('Exception');
+    exceptionButton.click(moveToException);
+    inputcontainer.append(exceptionButton);
 
     //creation of the image viewer
     if(fileExtension == "jpg"){
         img.onload = function(){
             imagecontainer.css("backgroundImage", "url('" + img.src + "')");
             imagecontainer.css("backgroundRepeat", "no-repeat");
-                imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
+            imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
             addEvents();
         }
     }else if(fileExtension == "tif"){
             imagecontainer.css("backgroundImage", "url('" + tifdataurl + "')");
             imagecontainer.css("backgroundRepeat", "no-repeat");
-                imagecontainer.css("backgroundSize", (tifimg.width()*cx) + "px " + (tifimg.height()*cy) + "px");
+            imagecontainer.css("backgroundSize", (tifimg.width()*cx) + "px " + (tifimg.height()*cy) + "px");
             addEvents();
     }
+}
+
+//move to exception when image is an exception/cannot be processed
+function moveToException(){
+    console.log('movemovemove')
+    //TODO create BPO node for exceptions and file path/ directory where exceptions will be placed
 }
 
 //adds validations to the parent element
