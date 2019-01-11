@@ -82,7 +82,7 @@ async function setInputsAndImages(){
                                 }else{
                                     nofileMsg.html('No Existing Elements in Node');
                                     nofileModal.show();
-                                    nextElementButton.on('click',completeToNextNode);
+                                    nextElementButton.on('click',getNextElement);
                                 }
                         });
                 });
@@ -142,7 +142,7 @@ $.postJSON = function(url, data, callback) {
 };
 
 //TODO GEt the app to load the next element
-async function completeToNextNode(){
+async function getNextElement(){
             nofileModal.hide();
             nextElementButton.off('click');
             images = [];
@@ -305,8 +305,12 @@ function createViewerAndForms(){
 
 //move to exception when image is an exception/cannot be processed
 function moveToException(){
-    console.log('movemovemove')
     //TODO create BPO node for exceptions and file path/ directory where exceptions will be placed
+    fs.move(bpoElement.fileLocation, config.exceptionsFolder + '/' + elementID + '/');
+    let exceptionQuery = config.BPOqueries.moveToException.replace('workerid', workerid)
+    .replace('nodeid', nodeID).replace('elementid',elementID);
+    $.postJSON(exceptionQuery,config.BPOqueries.completeInputJSON).done();
+    elementDone();
 }
 
 //adds validations to the parent element
@@ -690,20 +694,19 @@ function writejsonoutput(){
             if(err) throw err;
         });
     }
-    loadnextfile();
-    let completeQuery = config.BPOqueries.completeElement.replace('workerid', workerid).replace('nodeid', nodeID);
-    let queryUrl =  completeQuery.slice(0,completeQuery.indexOf('?',0) - 1) +
-            "/" + elementID + completeQuery.slice(completeQuery.indexOf('?',0));
+    elementDone();
+    let completeQuery = config.BPOqueries.completeElement.replace('workerid', workerid)
+    .replace('nodeid', nodeID).replace('elementid', elementID);
     $.postJSON(queryUrl,config.BPOqueries.completeInputJSON).done();
 }
 
 //function to remove the current input form and image, and load the next one in the input folder
-function loadnextfile(){
+function elementDone(){
     //remove the previous image and form to set up for the next image and form
     clearWindow();
     nofileMsg.html('Element Done');
     setTimeout(()=>{nofileModal.show()},500);
-    nextElementButton.on('click',completeToNextNode);
+    nextElementButton.on('click',getNextElement);
 }
 function clearWindow(){
     hiddenimage.empty();

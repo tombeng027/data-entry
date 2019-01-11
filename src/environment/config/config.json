@@ -2,6 +2,7 @@
 	"image": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\images/",
 	"input": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\inputs/",
 	"output": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\outputs/",
+	"exceptionsFolder":"C:\\Users\\nbriones\\Documents\\TASKS\\December 2018\\samp\\exceptions",
 	"imageFolder":"/images/",
 	"outputFolder":"outputs\\",
 	"fullscreen": false,
@@ -15,7 +16,8 @@
 		"schemaFolder":"C://Users/nbriones/Documents/TASKS/December 2018/schema/",
 		"getCurrentWorkload": "http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/workload?sort=startproctime",
 		"getElement": "http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/elements",
-		"completeElement": "http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/?nextNodeId=done",
+		"completeElement": "http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/elementid?nextNodeId=done",
+		"moveToException":"http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/elementid?nextNodeId=exception",
 		"completeInputJSON": {
 			"productionOutputUnits": {
 				"FIELD": {
