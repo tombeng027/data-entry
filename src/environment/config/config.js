@@ -44,7 +44,7 @@ function setupConfig(){
 
     $('#ok').click((event)=>{
         $('#apply').click();
-        fs.writeFileSync("./src/environment/config/config.json", JSON.stringify(config), function(err){
+        fs.writeFileSync("./src/environment/config/config.json", JSON.stringify(config,null,4), function(err){
             if(err) throw err;
         });
         if(restartRequired == true ){

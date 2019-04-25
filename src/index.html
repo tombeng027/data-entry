@@ -10,8 +10,13 @@
         <link rel="stylesheet" href="index.css">
     </head>
     <body>
-        <div id='container'>
+        <div id='msgBox'></div> <!-- this div is for the display of messages -->
+        <div id='container'><!-- this contains the image viewer -->
             <div id='viewer' class="ui-widget-content">
+                    <div id='shortcutsBox'>F1: Previous Image, 
+                        F2: Next Image, F4: Best Fit, F6: Save Fields, 
+                        F9: Submit Document</div><!-- div for shortcuts display -->
+                    <div id='imageFileName'></div><!-- this div is for the display of the file name -->
                 <div id='imagecontainer'></div>
             </div>
             <div id='inputcontainer' ></div>
@@ -27,10 +32,10 @@
                   
             </div>
         </div>
-        <span id='tooltiptext'></span>
+        <span id='tooltiptext'></span><!-- div for the tooltips when validating fields -->
         <span id='tooltiptext-b'></span>
-        <div id='suggestbox' class='input-group'></div>
-        <div id='proceedmodal' hidden=true>
+        <div id='suggestbox' class='input-group'></div> <!-- div for the drop down suggest box for solr -->
+        <div id='proceedmodal' hidden=true> <!-- div for the yes or no button when validating -->
             <h5>Input is Invalid.</h5>
             <p>Still Proceed to Next Line?</p>
             <div class="btn-group" role="group" aria-label="...">
@@ -38,7 +43,7 @@
                 <button id='proceedbuttonno' type="button" class="btn btn-danger prbtn" >NO</button>
             </div>
         </div>
-        <canvas id='hiddencanvas' hidden="true"></canvas>
+        <canvas id='hiddencanvas' hidden="true"></canvas>   <!-- canvas for converting tiff images-->
     </body>
     <script>
         require('jquery');

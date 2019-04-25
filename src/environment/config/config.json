@@ -3,30 +3,37 @@
 	"input": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\inputs/",
 	"output": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\outputs/",
 	"exceptionsFolder":"C:\\Users\\nbriones\\Documents\\TASKS\\December 2018\\samp\\exceptions",
-	"imageFolder":"/images/",
-	"outputFolder":"outputs\\",
-	"fullscreen": false,
-	"frame": true,
-	"devmode": false,
-	"qualMode": false,
-	"outputFileExtension": "json",
-	"onBPO": true,
+	"imageFolder": "",
+    "outputFolder": "pass-2",
+    "fullscreen": false,
+    "frame": true,
+    "devmode": false,
+    "qualMode": false,
+    "outputFileExtension": ".xml",
+    "onBPO": true,
+    "GDERestClient": {
+        "schemaFolder": "http://192.168.185.78:8080/gde/rest/GDEService/schema/",
+        "extraDetail":"SCHEMA"
+    },
 	"BPOqueries": {
-		"nodeID":"payslip",
-		"schemaFolder":"C://Users/nbriones/Documents/TASKS/December 2018/schema/",
-		"getCurrentWorkload": "http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/workload?sort=startproctime",
-		"getElement": "http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/elements",
-		"completeElement": "http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/elementid?nextNodeId=done",
-		"moveToException":"http://CYBELE:8080/bpo5/req/workers/workerid/nodes/nodeid/elementid?nextNodeId=exception",
-		"completeInputJSON": {
-			"productionOutputUnits": {
-				"FIELD": {
-					"outputCount": 0,
-					"errorCount": 0
-				}
-			}
-		}
-	},
+        "nodeID": "bpi-encodingpass2",
+        "nextNodeID": "bpi-BFC",
+        "domain": "http://192.168.185.78",
+        "port": "8080",
+        "contextRoot": "bpo5",
+        "getCurrentWorkload": "domain:port/contextroot/req/workers/workerid/nodes/nodeid/workload?sort=startproctime",
+        "getElement": "domain:port/contextroot/req/workers/workerid/nodes/nodeid/elements",
+        "completeElement": "domain:port/contextroot/req/workers/workerid/nodes/nodeid/elementid?nextNodeId=nextnode",
+        "moveToException": "domain:port/contextroot/req/workers/workerid/nodes/nodeid/elementid?nextNodeId=exception",
+        "completeInputJSON": {
+            "productionOutputUnits": {
+                "FIELD": {
+                    "outputCount": 0,
+                    "errorCount": 0
+                }
+            }
+        }
+    },
 	"orientation": {
 		"rows": false
 	},

@@ -4,21 +4,43 @@ body{
 
 #container{
     margin: .2%;
-    height: 700px;
+    height: 100vh;
 }
 
 #viewer{
     background-color: white;
     width: 60.5%;
-    height: 100%;
+    height: 100vh;
     overflow: hidden;
 }
 
 #imagecontainer{
+    background-color: darkgray;
+    background-repeat: no-repeat;
     cursor: move;
     border: 1px solid #d6d6d6;
     width: 100%;
-    height: 100%;
+    height: 100vh;
+}
+
+#imageFileName{
+    text-align: center;
+    top:28px;
+    left:15%;
+    border: 2px ridge gray;
+    z-index: 10;
+    width: 100%;
+    color: white;
+    background-color:black;
+}
+
+#shortcutsBox{
+    text-align: center;
+    border: 2px ridge gray;
+    z-index: 10;
+    width: 100%;
+    color: black;
+    background-color: white;
 }
 
 .handle-ew{
@@ -150,15 +172,27 @@ body{
     top: 40%;
     left: 40%;
 }
+#msgBox{
+    visibility: hidden;
+    font-size: 1.5vw;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    position:absolute;
+    background-color: white;
+    border: 1px solid lightgray;
+    border-radius: 25px;
+    padding: 15px;
+    top: 40%;
+    left: 40%;
+}
 
 @media only screen and (max-width: 1280px) {
 
     #viewer {
         width: 97%;
-        height: 400px;
+        height: 100vh;
     }
     #inputcontainer {
         width: 97%;
-        height: 300px;
+        height: 100vh;
     }
 }
