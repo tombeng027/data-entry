@@ -1,17 +1,19 @@
 {
-  "name": "data-entry",
+  "name": "data-entry-advantage",
   "version": "1.0.0",
-  "description": "data entry and image viewer",
-  "main": "index.js",
+  "description": "data entry and image viewer modified for advantage process",
+  "main": "./src/index.js",
   "scripts": {
     "postinstall": "electron-builder install-app-deps",
     "start": "electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
-  "build":{
-    "productName":"Data Entry Prototype",
-    "extraFiles": ["config/"]
+  "build": {
+    "productName": "Data Entry Prototype",
+    "extraFiles": [
+      "./src/environment/config/config.json"
+    ]
   },
   "keywords": [
     "data",
@@ -23,15 +25,32 @@
     "@types/jquery": "^3.3.17",
     "electron": "latest",
     "electron-build": "latest",
-    "electron-builder": "latest"
+    "electron-builder": "latest",
+    "xml2js": "^0.4.19"
   },
   "win": {
     "target": "NSIS"
   },
+  "linux": {
+    "target": [
+      "AppImage",
+      "deb"
+    ]
+  },
   "dependencies": {
-    "bootstrap": "^3.3.7",
+    "bootstrap": "^4.1.2",
     "electron-packager": "^12.2.0",
+    "fs-extra": "^7.0.1",
+    "gm": "^1.23.1",
+    "graphicsmagick": "^0.0.1",
+    "imagemagick": "^0.1.3",
     "jquery": "^3.3.1",
-    "jquery-ui": "file:jquery-ui"
+    "pngjs": "^3.4.0",
+    "tiff.js": "^1.0.0",
+    "upng-js": "^2.1.0",
+    "utif": "^3.0.0",
+    "xml2js": "^0.4.19",
+    "xmlbuilder": "^10.1.1",
+    "xmlhttprequest": "^1.8.0"
   }
 }

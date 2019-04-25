@@ -1,0 +1,173 @@
+body{
+    overflow: hidden;
+}
+
+#container{
+    margin: .2%;
+    height: 100vh;
+}
+
+#viewer{
+    background-color: white;
+    width: 60.5%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#imagecontainer{
+    background-color: darkgray;
+    cursor: move;
+    border: 1px solid #d6d6d6;
+    width: 100%;
+    height: 100vh;
+}
+#imageFileName{
+    position:fixed;
+    left:20%;
+    color: white;
+    background-color: black;
+    opacity: .5;
+}
+
+.handle-ew{
+    width: 5px;
+    height: 100vh;
+    border: .5px ridge lightgray;
+    background-color: black;
+    /* position: absolute; */
+    cursor: ew-resize;
+}
+
+.handle-ns{
+    width: 100vw;
+    height: 5px;
+    border: .5px ridge lightgray;
+    background-color: black;
+    /* position: absolute; */
+    cursor: ns-resize;
+}
+
+#inputcontainer{
+    width: 39%;
+    overflow: scroll; 
+    border: 1px solid #d6d6d6;
+    text-align: center;
+    height: 100vh
+} 
+
+.hiddenimage{
+    overflow: hidden;
+    width: 0;
+    height:0;
+}
+
+#inputcontainer div{
+    margin: 1%;
+}
+
+#image{
+    margin-left: 120%;
+}
+#nofile{
+   text-align: center;
+   margin-top: 20%;
+}
+
+.highlightBox{
+    background-color: rgba(30, 143, 255, 0.432);
+    z-index: 5;
+    border: 1px 1px solid white;
+}
+
+/*Suggest Box*/
+#suggestbox div{
+    text-overflow: ellipsis;
+    overflow: hidden;
+    margin:0;
+}
+#suggestbox{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left:0 !important;
+    text-align: left;
+    border: 1px solid lightskyblue;
+    box-shadow: .5px .5px .5px lightskyblue;
+    /* Position the tooltip text */
+    position: absolute;
+    top: 22px;
+    z-index: 10;
+    /* Fade in tooltip */
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+.active{
+    background-color: lightblue;
+}
+/* Tooltip text */
+#tooltiptext, #tooltiptext-b{
+    visibility: visible;
+    width: auto;
+    background-color: rgb(253, 55, 55);
+    color: black;
+    text-align: center;
+    padding: 3px 5px;
+    border-radius: 6px;
+
+    /* Position the tooltip text */
+    position: absolute;
+    z-index: 10;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+
+    /* Fade in tooltip */
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
+#tooltiptext-b{
+    bottom: -100%;
+}
+
+/* Tooltip arrow */
+#tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgb(253, 55, 55) transparent transparent transparent;
+}
+#tooltiptext-b::before {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent rgb(253, 55, 55) transparent;
+}
+#proceedmodal{
+    position:absolute;
+    background-color: white;
+    border: 1px solid lightgray;
+    border-radius: 25px;
+    padding: 15px;
+    top: 40%;
+    left: 40%;
+}
+
+@media only screen and (max-width: 1280px) {
+
+    #viewer {
+        width: 97%;
+        height: 100vh;
+    }
+    #inputcontainer {
+        width: 97%;
+        height: 100vh;
+    }
+}
