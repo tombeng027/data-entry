@@ -164,10 +164,10 @@ async function setInputsAndImages(){
                 input = await getSchema(schemaIdentifier);
             }else{
                 schemaButton.hide();
-                await $.getJSON(config.schema, function(data) {   
-                    console.log(data)      
+                await $.getJSON(config.schema, function(data) {        
                     input = data;
                 });
+                doctype = baseName(config.schema);
             }
             loadFile();
         }
@@ -209,8 +209,7 @@ async function createSchemaBox(){
                 if(config.localSchema){
                     for(let o in inputs){
                         if(baseName(inputs[o]) == schemaList[i]){
-                            await $.getJSON(inputs[o], function(data) {   
-                                console.log(data)      
+                            await $.getJSON(inputs[o], function(data) {      
                                 input = data;
                             });
                         }
@@ -219,7 +218,7 @@ async function createSchemaBox(){
                     input = await getSchema(schemaList[i]);
                 }
                 loadFile();
-                doctype = schemaList[i];
+                doctype = await schemaList[i];
                 schemaSelection.empty();
                 schemaBox.html(schemaList[i].toLocaleUpperCase());
             });
@@ -308,7 +307,7 @@ function loadValues(){
             outputFilePath = bpoElement.fileLocation + path.sep + outputFolder + path.sep + elementID + "_" + doctype + outputFileExtension;
         }
     }else{
-        outputFilePath = config.output + path.sep + filename + "_" + doctype; 
+        outputFilePath = config.output + path.sep + filename + "_" + doctype + outputFileExtension; 
     }
     let output;
     //load output values from json file
@@ -948,6 +947,7 @@ function writejsonoutput(){
         // fs.writeFileSync(config.output + "output " + fileName + ".json", JSON.stringify(data), function(err){
         //     if(err) throw err;
         // });
+        if(!fs.existsSync(config.output))fs.mkdirSync(config.output,{recursive:true});
         fs.writeFileSync(config.output + path.sep + baseName(images[imageIndex]) + "_" + doctype + ".xml", doc.toString( { pretty : true }), function(err){
             if(err) throw err;
         });
@@ -980,15 +980,29 @@ function writejsonoutput(){
 
 //function to remove the current input form and image, and load the next one in the input folder
 async function elementDone(){
-    let completeQuery = config.BPOqueries.completeElement.replace(workerVar, workerid)
-        .replace(nodeVar, nodeID).replace(elementVar, elementID).replace(domainVar,domain)
-        .replace(portVar,port).replace(contextRootVar,contextRoot).replace(nextNodeVar,nextNodeId);
+    if(config.onBPO){
+        let completeQuery = config.BPOqueries.completeElement.replace(workerVar, workerid)
+            .replace(nodeVar, nodeID).replace(elementVar, elementID).replace(domainVar,domain)
+            .replace(portVar,port).replace(contextRootVar,contextRoot).replace(nextNodeVar,nextNodeId);
         $.postJSON(completeQuery,config.BPOqueries.completeInputJSON).done();
+    }else{
+        
+    }
     //remove the previous image and form to set up for the next image and form
     await clearWindow();
     nofileMsg.html('Element Done');
     setTimeout(()=>{nofileModal.show()},500);
     nextElementButton.on('click',getNextElement);
+}
+
+function moveCompleted(){
+    if(!fs.existsSync(config.completedFolder)){
+        fs.mkdirSync(config.completedFolder,{recursive:true});
+    }
+    let oldPath = images[imageIndex];
+    let newPath = config.completedFolder + path.sep + baseName(images[imageIndex]) + '.' + fileExtension;
+    fs.moveSync(oldPath,newPath);
+    images.splice(imageIndex,1)
 }
 function clearWindow(){
     // hiddenimage.empty();
@@ -1208,8 +1222,7 @@ async function changeImage(){
             input = await getSchema(schemaIdentifier);
         }else{
             schemaButton.hide();
-            await $.getJSON(config.schema, function(data) {   
-                console.log(data)      
+            await $.getJSON(config.schema, function(data) {       
                 input = data;
             });
         }

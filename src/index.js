@@ -8,11 +8,11 @@ let configWindow;
 //window creation
 function createWindow(){
     mainWindow = new BrowserWindow({ minWidth:600, minHeight:750,width:1366, height:720, frame:config.frame, fullscreen:config.fullscreen, webPreferences: {
-        plugins: true
+        nodeIntegration:true, plugins: true
       }});
     
     loginWindow = new BrowserWindow({ parent:mainWindow, modal:true, width:350 , height:350, frame:false,
-       fullscreen:false, webPreferences: { plugins: true }})
+       fullscreen:false, webPreferences: { nodeIntegration:true, plugins: true }})
     loginWindow.loadFile('./src/app/sso/ssologin.html');
     loginWindow.setMenuBarVisibility(false);
     mainWindow.hide();
