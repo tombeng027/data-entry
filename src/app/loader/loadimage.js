@@ -38,6 +38,10 @@ var body = $('body');
 var proceedmodal = $('#proceedmodal');
 var imageFileName = $('#imageFileName');
 var msgBox = $('#msgBox');
+var schemaButton = $('#selectSchemaButton');
+var schemaSelection = $('#schemaSelection');
+var schemaBox = $('#schemaBox');
+var doctype;
 let suggestindex;
 //variables for creating the input forms and the image viewer
 var input;
@@ -146,22 +150,86 @@ async function setInputsAndImages(){
                 });
             });
             remote.getGlobal('shared').images = images;
+            
     }else{
         images = remote.getGlobal('images');
         inputs = remote.getGlobal('inputs'); 
     }
         //parsing of the json for the input forms
-    try{
-        let schema =  await new Promise((resolve,reject)=>{
-            $.get(config.GDERestClient.schemaFolder + schemaIdentifier).done(resolve);
-            // $.get(config.GDERestClient.schemaFolder + elementID.substring(0,elementID.indexOf('.')).toLowerCase()).done(resolve);
-        });
-
-        input = schema;
-    }finally{
-        loadFile();
-    }
+        defineOrientation();
+        if(config.manualSchema){
+            createSchemaBox();
+        }else{
+            if(config.onBPO){
+                input = await getSchema(schemaIdentifier);
+            }else{
+                schemaButton.hide();
+                await $.getJSON(config.schema, function(data) {   
+                    console.log(data)      
+                    input = data;
+                });
+            }
+            loadFile();
+        }
 }
+
+async function getSchema(schemaId){
+    let schema =  await new Promise((resolve,reject)=>{
+        $.get(config.GDERestClient.schemaFolder + schemaId).done(resolve);
+        // $.get(config.GDERestClient.schemaFolder + elementID.substring(0,elementID.indexOf('.')).toLowerCase()).done(resolve);
+    });
+    return schema;
+}
+
+async function getSchemaList(){
+    var msg = $.ajax({type: "GET", url: config.GDERestClient.schemaFolder, async: false}).responseText;
+    return msg.split('|');
+}
+
+async function createSchemaBox(){
+    inputcontainer.append(schemaButton);
+    let schemaList;
+    if(!config.localSchema){
+        schemaList = await getSchemaList();
+    }else{
+        schemaList = [];
+        for(let i in inputs){
+            schemaList.push(baseName(inputs[i]));
+        }
+    }
+        for(let i in schemaList){
+            let entry = document.createElement('a');
+            let list = document.createElement('li');
+            list.setAttribute('role','presentation');
+            entry.setAttribute('role','menuitem');
+            entry.setAttribute('tab-index','-1');
+            entry.setAttribute('href','#');
+            entry.addEventListener('click',async (e)=>{
+                e.stopPropagation();
+                if(config.localSchema){
+                    for(let o in inputs){
+                        if(baseName(inputs[o]) == schemaList[i]){
+                            await $.getJSON(inputs[o], function(data) {   
+                                console.log(data)      
+                                input = data;
+                            });
+                        }
+                    }
+                }else{
+                    input = await getSchema(schemaList[i]);
+                }
+                loadFile();
+                doctype = schemaList[i];
+                schemaSelection.empty();
+                schemaBox.html(schemaList[i].toLocaleUpperCase());
+            });
+            entry.innerHTML = schemaList[i].toLocaleUpperCase();
+            list.append(entry);
+            schemaSelection.append(list);
+        }
+}
+
+
     
 
 //TODO complete to next node
@@ -191,9 +259,13 @@ async function getNextElement(){
 }
  
 //function to load file
-function loadFile(){
-        //check to close the window if all files have been processed
-        fileExtension = images[imageIndex].split('.').pop();
+async function loadFile(){
+        await createViewerAndForms();    
+        loadValues();
+}
+
+function defineOrientation(){
+    fileExtension = images[imageIndex].split('.').pop();
         //loading of the image
         if( fileExtension == "jpg"){
             img.src = images[imageIndex];
@@ -211,22 +283,32 @@ function loadFile(){
             inputcontainer.css('width', '99.5vw');
             inputcontainer.css('height', '29vh');
         }
-        createViewerAndForms();    
-        // if(config.qualMode){
-            loadValues();
-        // }
+        if(fileExtension == "jpg"){
+            img.onload = function(){
+                imagecontainer.css("backgroundImage", "url('" + img.src + "')");
+                imagecontainer.css("backgroundRepeat", "no-repeat");
+                imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
+            }
+        }else if(fileExtension == "tif"){
+                imagecontainer.css("backgroundImage", "url('" + tifdataurl + "')");
+                imagecontainer.css("backgroundRepeat", "no-repeat");
+                imagecontainer.css("backgroundSize", (tifimg.width()*cx) + "px " + (tifimg.height()*cy) + "px");
+        }
+        createHandle();
 }
 
 function loadValues(){
-    let test = images[imageIndex].split('/');
-    let filename = test[test.length -1];
+    let filename = baseName(images[imageIndex]);
     let outputFileExtension = config.outputFileExtension;
     let outputFilePath; 
     if(config.onBPO){
-        outputFilePath = bpoElement.fileLocation + path.sep + outputFolder + path.sep + elementID + outputFileExtension;
+        if(baseName(images[imageIndex]) == bpoElement.elementName){
+            outputFilePath = bpoElement.fileLocation + path.sep + outputFolder + path.sep + elementID + outputFileExtension;
+        }else{
+            outputFilePath = bpoElement.fileLocation + path.sep + outputFolder + path.sep + elementID + "_" + doctype + outputFileExtension;
+        }
     }else{
-        outputFilePath = config.output + "output " + 
-        filename.substring(0, filename.length - 4) + outputFileExtension;
+        outputFilePath = config.output + path.sep + filename + "_" + doctype; 
     }
     let output;
     //load output values from json file
@@ -265,8 +347,7 @@ function loadValues(){
         }
     }
 }
-
-function createViewerAndForms(){
+function createHandle(){
     //creating resize handle
     if(config.orientation.rows == false){
         let handle = $('<div id="handle" class="handle-ew">');
@@ -280,6 +361,9 @@ function createViewerAndForms(){
         handle.css('top', parseInt(viewer.css('height').replace('px',''))  + 'px'); 
         handle.on('mousedown',initResize);
     }
+}
+
+function createViewerAndForms(){
     //creation of the input forms
     var inputdiv = $('<div class="form-group form-group-sm">');
     let x = 1;
@@ -368,20 +452,12 @@ function createViewerAndForms(){
     exceptionButton.click(moveToException);
     inputcontainer.append(exceptionButton);
     //creation of the image viewer
-    imageFileName.html("Element Name: " + elementID + ", " + (imageIndex + 1) + "/" + images.length + "Images");
-    if(fileExtension == "jpg"){
-        img.onload = function(){
-            imagecontainer.css("backgroundImage", "url('" + img.src + "')");
-            imagecontainer.css("backgroundRepeat", "no-repeat");
-            imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
-            addEvents();
-        }
-    }else if(fileExtension == "tif"){
-            imagecontainer.css("backgroundImage", "url('" + tifdataurl + "')");
-            imagecontainer.css("backgroundRepeat", "no-repeat");
-            imagecontainer.css("backgroundSize", (tifimg.width()*cx) + "px " + (tifimg.height()*cy) + "px");
-            addEvents();
+    if(config.onBPO){
+        imageFileName.html("Element Name: " + elementID + ", " + (imageIndex + 1) + "/" + images.length + "Images");
+    }else{
+        imageFileName.html("FileName: " + baseName(images[imageIndex]) + ", " + (imageIndex + 1) + "/" + images.length + "Images");
     }
+    addEvents();
 }
 //get basename
 function baseName(str)
@@ -798,9 +874,14 @@ function writejsonoutput(){
     // let data = {};
     let doc = builder.create('xml');
     doc.ele('Document_Id')
-        .txt(elementID + '.' + fileExtension).up();
-    doc.ele('Document_Type')
-        .txt(elementID.substring(0,4)).up();
+        .txt(baseName(images[imageIndex]) + '.' + fileExtension).up();
+    if(config.onBPO){
+        doc.ele('Document_Type')
+        .txt(elementID.split("_")[3]).up();
+    }else{
+        doc.ele('Document_Type')
+        .txt(doctype).up();
+    }
     doc.ele('Worker_Id')
         .txt(workerid).up();
     for(let n in input){
@@ -863,26 +944,32 @@ function writejsonoutput(){
     }
     var filePath = config.GDERestClient.schemaFolder;
     var fileName = filePath.replace(/^.*[\\\/]/, '').replace(".json", '');
-    if(!fs.existsSync(bpoElement.fileLocation + path.sep + outputFolder)){
-        fs.mkdirSync(bpoElement.fileLocation + path.sep + outputFolder, { recursive: true });
-    }
     if(!config.onBPO){
         // fs.writeFileSync(config.output + "output " + fileName + ".json", JSON.stringify(data), function(err){
         //     if(err) throw err;
         // });
-        fs.writeFileSync(config.output + "output " + fileName + ".xml", doc.toString( { pretty : true }), function(err){
+        fs.writeFileSync(config.output + path.sep + baseName(images[imageIndex]) + "_" + doctype + ".xml", doc.toString( { pretty : true }), function(err){
             if(err) throw err;
         });
     }else{
+        if(!fs.existsSync(bpoElement.fileLocation + path.sep + outputFolder)){
+            fs.mkdirSync(bpoElement.fileLocation + path.sep + outputFolder, { recursive: true });
+        }
         // fs.writeFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + ".json", JSON.stringify(data), function(err){
         //     if(err) throw err;
         // });
-        fs.writeFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + ".xml",  doc.toString( { pretty : true }), function(err){
-            if(err) throw err;
-        });
-        let src = bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + ".xml";
-        let dest = bpoElement.fileLocation + path.sep + bpoElement.elementId + ".xml";
-        fs.copyFileSync(src,dest);
+        if(imageIndex == 0){
+            fs.writeFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + ".xml",  doc.toString( { pretty : true }), function(err){
+                if(err) throw err;
+            });
+        }else{
+            fs.writeFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.toLocaleUpperCase() + ".xml",  doc.toString( { pretty : true }), function(err){
+                if(err) throw err;
+            });
+        }
+        // let src = bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype + ".xml";
+        // let dest = bpoElement.fileLocation + path.sep + bpoElement.elementId + ".xml";
+        // fs.copyFileSync(src,dest);
     }
     msgBox.html('Saved');
     msgBox.css('visibility','visible');
@@ -904,9 +991,10 @@ async function elementDone(){
     nextElementButton.on('click',getNextElement);
 }
 function clearWindow(){
-    hiddenimage.empty();
+    // hiddenimage.empty();
     $('#handle').remove();
     imagecontainer.css('backgroundImage', 'none');
+    body.append(schemaButton);
     inputcontainer.empty();
     // localStorage.clear(); 
 }
@@ -983,7 +1071,6 @@ $(document).ready(function(){
             }else{
                 imageIndex = images.length - 1;
             }
-            // loadValues();
             changeImage();
         }else if(e.key == 'F1'){
             if(imageIndex > 0){
@@ -991,7 +1078,6 @@ $(document).ready(function(){
             }else{
                 imageIndex = 0;
             }
-            // loadValues();
             changeImage();
         }else if(e.key == 'F9'){
             elementDone();
@@ -1091,13 +1177,18 @@ $(document).ready(function(){
         }
     });
 });
-function changeImage(){
+async function changeImage(){
     remote.getGlobal('shared').index = imageIndex;
-    fileExtension = images[imageIndex].split('.').pop();
-    imageFileName.html("Element Name: " + elementID + ", " + (imageIndex + 1) + "/" + images.length + " Images");
+    fileExtension = await images[imageIndex].split('.').pop();
+    if(config.onBPO){
+        imageFileName.html("Element Name: " + elementID + ", " + (imageIndex + 1) + "/" + images.length + "Images");
+    }else{
+        imageFileName.html("FileName: " + baseName(images[imageIndex]) + ", " + (imageIndex + 1) + "/" + images.length + "Images");
+    }
         if( fileExtension == "jpg"){
             img.src = images[imageIndex];
-            imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
+            imagecontainer.css("backgroundImage", 'url(' + img.src + ')');
+            imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px"); 
         }else if(fileExtension == "tif"){
             tiffile = images[imageIndex];
             tifinput = fs.readFileSync(tiffile);
@@ -1105,7 +1196,27 @@ function changeImage(){
             tifdataurl = tifimg.toCanvas().toDataURL();
             imagecontainer.css('backgroundImage', 'url(' + tifdataurl + ')');
             imagecontainer.css("backgroundSize", (tifimg.width()*cx) + "px " + (tifimg.height()*cy) + "px");
-        }       
+        }
+    schemaSelection.empty();
+    body.append(schemaButton);
+    inputcontainer.empty();
+    if(config.manualSchema){
+        schemaBox.html('Select Schema <span class="caret"></span>');
+        createSchemaBox();
+    }else{
+        if(config.onBPO){
+            input = await getSchema(schemaIdentifier);
+        }else{
+            schemaButton.hide();
+            await $.getJSON(config.schema, function(data) {   
+                console.log(data)      
+                input = data;
+            });
+        }
+        loadFile();
+    }
+    
+    inputcontainer.append(schemaButton);
 }
 
 //make image viewer draggable

@@ -1,21 +1,24 @@
 {
-	"image": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\images/",
-	"input": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\inputs/",
-	"output": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\outputs/",
-	"exceptionsFolder":"C:\\Users\\nbriones\\Documents\\TASKS\\December 2018\\samp\\exceptions",
-	"imageFolder": "",
+    "image": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\images/",
+    "input": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\inputs/",
+    "schema": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\inputs/test.json",
+    "output": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\outputs",
+    "exceptionsFolder": "C:\\Users\\nbriones\\Documents\\TASKS\\December 2018\\samp\\exceptions",
+    "imageFolder": "",
     "outputFolder": "pass-2",
     "fullscreen": false,
     "frame": true,
     "devmode": false,
     "qualMode": false,
     "outputFileExtension": ".xml",
-    "onBPO": true,
+    "onBPO": false,
+    "manualSchema": false,
+    "localSchema":true,
     "GDERestClient": {
         "schemaFolder": "http://192.168.185.78:8080/gde/rest/GDEService/schema/",
-        "extraDetail":"SCHEMA"
+        "extraDetail": "SCHEMA"
     },
-	"BPOqueries": {
+    "BPOqueries": {
         "nodeID": "bpi-encodingpass2",
         "nextNodeID": "bpi-BFC",
         "domain": "http://192.168.185.78",
@@ -34,11 +37,11 @@
             }
         }
     },
-	"orientation": {
-		"rows": false
-	},
-	"inputorientation": {
-		"rows": true
-	},
-	"blockscroll": false
+    "orientation": {
+        "rows": false
+    },
+    "inputorientation": {
+        "rows": true
+    },
+    "blockscroll": false
 }
