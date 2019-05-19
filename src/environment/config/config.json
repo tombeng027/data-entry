@@ -1,36 +1,42 @@
 {
-    "image": "C:\\Users\\nbriones\\Documents\\Tasks\\Data Entry\\Land Bank Version\\test\\images/",
-    "input": "C:\\Users\\nbriones\\Documents\\Tasks\\Data Entry\\Land Bank Version\\test\\inputs/",
-    "schema": "C:\\Users\\nbriones\\Documents\\Tasks\\Data Entry\\Land Bank Version\\test\\inputs/test.json",
-    "output": "C:\\Users\\nbriones\\Documents\\Tasks\\Data Entry\\Land Bank Version\\test\\outputs",
-    "exceptionsFolder": "C:\\Users\\nbriones\\Documents\\Tasks\\Data Entry\\Land Bank Version\\test\\exceptions",
+    "image": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\images/",
+    "input": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\inputs/",
+    "output": "C:\\Users\\nbriones\\Documents\\TASKS\\October 2018\\10-9-2018 Electron JS Research\\test\\outputs/",
+    "exceptionsFolder": "C:\\Users\\nbriones\\Documents\\TASKS\\December 2018\\samp\\exceptions",
     "imageFolder": "",
-    "outputFolder": "pass-2",
+    "outputFolder": "output",
     "fullscreen": false,
     "frame": true,
     "devmode": false,
     "qualMode": false,
+    "loginTitle":"Login Encoding",
     "outputFileExtension": ".xml",
-    "onBPO": false,
+    "applicationFormExt": "PD-APFR",
+    "onBPO": true,
+    "enterValue":1,
     "manualSchema": false,
-    "localSchema":true,
+    "exemptedTags":"_Annotation|Document_Id|Document_Type|Worker_Id",
     "GDERestClient": {
-        "schemaFolder": "http://192.168.185.78:8080/gde/rest/GDEService/schema/",
-        "extraDetail": "SCHEMA"
+        "schemaFolder": "http://localhost:8080/gde/rest/GDEService/schema/",
+        "extraDetail": "extra1"
     },
     "BPOqueries": {
-        "nodeID": "bpi-encodingpass2",
-        "nextNodeID": "bpi-BFC",
-        "domain": "http://192.168.185.78",
+        "nodeID": "endnode",
+        "nextNodeID": "endnode",
+        "domain": "http://localhost",
         "port": "8080",
         "contextRoot": "bpo5",
         "getCurrentWorkload": "domain:port/contextroot/req/workers/workerid/nodes/nodeid/workload?sort=startproctime",
         "getElement": "domain:port/contextroot/req/workers/workerid/nodes/nodeid/elements",
         "completeElement": "domain:port/contextroot/req/workers/workerid/nodes/nodeid/elementid?nextNodeId=nextnode",
-        "moveToException": "domain:port/contextroot/req/workers/workerid/nodes/nodeid/elementid?nextNodeId=exception",
+        "moveToException": "domain:port/contextroot/req/workers/workerid/nodes/nodeid/elementid?nextNodeId=encoding",
+        "charCountKey":"LINE_COUNT",
+        "charMeasureUnit":"LINE",
+        "imgCountKey":"",
+        "imgMeasureUnit":"",
         "completeInputJSON": {
             "productionOutputUnits": {
-                "FIELD": {
+                "LINE_COUNT": {
                     "outputCount": 0,
                     "errorCount": 0
                 }

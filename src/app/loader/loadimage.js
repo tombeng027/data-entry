@@ -103,6 +103,7 @@ const specific = 'specific';
 const invalidcharacters = 'invalidcharacters';
 
 async function setInputsAndImages(){
+    schemaBox.hide();
     let data;
     if(config.onBPO){
             data  = await new Promise((resolve,reject)=>{
@@ -150,26 +151,19 @@ async function setInputsAndImages(){
                 });
             });
             remote.getGlobal('shared').images = images;
-            
     }else{
         images = remote.getGlobal('images');
         inputs = remote.getGlobal('inputs'); 
     }
         //parsing of the json for the input forms
-        defineOrientation();
         if(config.manualSchema){
-            createSchemaBox();
+            fileCheck();
+            defineOrientation();
         }else{
-            if(config.onBPO){
-                input = await getSchema(schemaIdentifier);
-            }else{
-                schemaButton.hide();
-                await $.getJSON(config.schema, function(data) {        
-                    input = data;
-                });
-                doctype = baseName(config.schema);
-            }
+            input = await getSchema(schemaIdentifier);
+            defineOrientation();
             loadFile();
+            doctype = schemaIdentifier;
         }
 }
 
@@ -188,15 +182,7 @@ async function getSchemaList(){
 
 async function createSchemaBox(){
     inputcontainer.append(schemaButton);
-    let schemaList;
-    if(!config.localSchema){
-        schemaList = await getSchemaList();
-    }else{
-        schemaList = [];
-        for(let i in inputs){
-            schemaList.push(baseName(inputs[i]));
-        }
-    }
+    let schemaList = await getSchemaList();
         for(let i in schemaList){
             let entry = document.createElement('a');
             let list = document.createElement('li');
@@ -206,19 +192,9 @@ async function createSchemaBox(){
             entry.setAttribute('href','#');
             entry.addEventListener('click',async (e)=>{
                 e.stopPropagation();
-                if(config.localSchema){
-                    for(let o in inputs){
-                        if(baseName(inputs[o]) == schemaList[i]){
-                            await $.getJSON(inputs[o], function(data) {      
-                                input = data;
-                            });
-                        }
-                    }
-                }else{
-                    input = await getSchema(schemaList[i]);
-                }
+                input = await getSchema(schemaList[i]);
                 loadFile();
-                doctype = await schemaList[i];
+                doctype = schemaList[i];
                 schemaSelection.empty();
                 schemaBox.html(schemaList[i].toLocaleUpperCase());
             });
@@ -291,38 +267,51 @@ function defineOrientation(){
         }else if(fileExtension == "tif"){
                 imagecontainer.css("backgroundImage", "url('" + tifdataurl + "')");
                 imagecontainer.css("backgroundRepeat", "no-repeat");
-                imagecontainer.css("backgroundSize", (tifimg.width()*cx) + "px " + (tifimg.height()*cy) + "px");
+                imagecontainer.css("backgroundSize", (imagecontainer.width()) + "px " + (imagecontainer.height()) + "px");
+                imagecontainer.css("backgroundPosition", 'center');
         }
         createHandle();
 }
 
-function loadValues(){
-    let filename = baseName(images[imageIndex]);
+async function loadValues(){
+    let test = images[imageIndex].split('/');
+    let filename = bpoElement.elementId;
     let outputFileExtension = config.outputFileExtension;
     let outputFilePath; 
+    let json;
     if(config.onBPO){
-        if(baseName(images[imageIndex]) == bpoElement.elementName){
-            outputFilePath = bpoElement.fileLocation + path.sep + outputFolder + path.sep + elementID + outputFileExtension;
-        }else{
-            outputFilePath = bpoElement.fileLocation + path.sep + outputFolder + path.sep + elementID + "_" + doctype + outputFileExtension;
-        }
+       await new Promise((resolve)=>{
+            fs.readdir(bpoElement.fileLocation + path.sep + outputFolder,(err,dir)=>{
+                for(let i in dir){
+                    let output = fs.readFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + dir[i],'ascii');
+                    parser.parseString(output.substring(0, output.length), function (err, result) {
+                        json = result;
+                            outputFilePath = bpoElement.fileLocation + path.sep + outputFolder + path.sep + dir[i];
+                            resolve();
+                    });
+                }
+            });
+        });
     }else{
-        outputFilePath = config.output + path.sep + filename + "_" + doctype + outputFileExtension; 
+        outputFilePath = config.output + "output " + 
+        filename.substring(0, filename.length - 4) + outputFileExtension;
     }
     let output;
-    //load output values from json file
+    // load output values from json file
     if(outputFileExtension == ".json"){
-        try{
-            output = JSON.parse(fs.readFileSync(outputFilePath,'utf8'));
-        }catch(err){
-            alert(err);
-        }
-        for(let i in output){
-            if(typeof output[i] == 'string'){
-                $('#'+i).val(output[i]);
-            }else if(typeof output[i] == 'object'){
-                for(let o in output[i]){
-                    $('#'+o).val(output[i][o]);
+        if(fs.existsSync(outputFilePath)){
+            try{
+                output = JSON.parse(fs.readFileSync(outputFilePath,'utf8'));
+            }catch(err){
+                alert(err);
+            }
+            for(let i in output){
+                if(typeof output[i] == 'string'){
+                    $('#'+i).val(output[i]);
+                }else if(typeof output[i] == 'object'){
+                    for(let o in output[i]){
+                        $('#'+o).val(output[i][o]);
+                    }
                 }
             }
         }
@@ -403,32 +392,12 @@ function createViewerAndForms(){
                 inputline.setAttribute(validity, 'true');
                 inputprep.append(inputline);
                 inputline.setAttribute('tabIndex', x++);
-                let parentChilddiv;
-                if(input[n][i].parentChild != undefined){
-                    for(let o in input[n][i].parentChild){
-                        if(o != "Enabler" && o != "validation"){
-                            if(input[n][i].parentChild != undefined){
-                                parentChilddiv = document.createElement('div');
-                                parentChilddiv.setAttribute('class','input-group');
-                                parentChilddiv.style.margin = 0;
-                            }
-                            let childinput = document.createElement('input');
-                            let label = document.createElement('span');
-                            label.setAttribute('class','input-group-addon');
-                            label.append(input[n][i].parentChild[o].ChildName);
-                            parentChilddiv.append(label);
-                            childinput.setAttribute('id', o);
-                            addChildValidations(childinput,n,i,o);
-                            childinput.setAttribute('type', 'text');
-                            childinput.setAttribute('class','form-control form-control-sm');
-                            childinput.setAttribute('disabled','true');
-                            childinput.setAttribute('tabIndex', x++);
-                            parentChilddiv.append(childinput);
-                            inputprep.append(parentChilddiv);
+                if(config.qualMode){
+                    body.on('keydown',(e)=>{
+                        if(e.key == 'F7'){
+                            inputline.toggleAttribute('disabled');
                         }
-                    }
-                }
-                if(input[n][i].validation.locked){
+                    });
                     inputline.setAttribute("disabled",true);
                 }
                 inputdiv.append(inputprep);
@@ -441,22 +410,21 @@ function createViewerAndForms(){
     savebutton.position('relative');
     savebutton.css('margin','10% 30% 10% 5%');
     savebutton.attr('tabIndex',x)
-    savebutton.append('SAVE');
+    savebutton.append('SUBMIT');   
     savebutton.click(writejsonoutput);
     inputcontainer.append(savebutton);
-    //create exception button
-    exceptionButton = $('<button type="button" class="btn btn-sm btn-danger">')
-    exceptionButton.position('relative');
-    exceptionButton.append('Exception');
-    exceptionButton.click(moveToException);
-    inputcontainer.append(exceptionButton);
-    //creation of the image viewer
-    if(config.onBPO){
-        imageFileName.html("Element Name: " + elementID + ", " + (imageIndex + 1) + "/" + images.length + "Images");
-    }else{
-        imageFileName.html("FileName: " + baseName(images[imageIndex]) + ", " + (imageIndex + 1) + "/" + images.length + "Images");
+    if(config.qualMode){
+        //create exception button
+        exceptionButton = $('<button type="button" class="btn btn-sm btn-danger">')
+        exceptionButton.position('relative');
+        exceptionButton.append('REJECT');
+        exceptionButton.click(moveToException);
+        inputcontainer.append(exceptionButton);
     }
+    //creation of the image viewer
+    imageFileName.html("Element Name: " + elementID + ", " + (imageIndex + 1) + "/" + images.length + "Images");
     addEvents();
+    $('#Application_Number').focus();
 }
 //get basename
 function baseName(str)
@@ -467,13 +435,17 @@ function baseName(str)
    return base;
 }
 //move to exception when image is an exception/cannot be processed
-function moveToException(){
+async function moveToException(){
     //TODO create BPO node for exceptions and file path/ directory where exceptions will be placed
-    fs.move(bpoElement.fileLocation, config.exceptionsFolder + '/' + elementID + '/');
+    // fs.move(bpoElement.fileLocation, config.exceptionsFolder + '/' + elementID + '/');
     let exceptionQuery = config.BPOqueries.moveToException.replace(workerVar, workerid)
-    .replace(nodeVar, nodeID).replace(elementVar,elementID);
+        .replace(nodeVar, nodeID).replace(elementVar, elementID).replace(domainVar,domain)
+        .replace(portVar,port).replace(contextRootVar,contextRoot);
     $.postJSON(exceptionQuery,config.BPOqueries.completeInputJSON).done();
-    elementDone();
+    await clearWindow();
+    nofileMsg.html('Element Move To Exception');
+    setTimeout(()=>{nofileModal.show()},500);
+    nextElementButton.on('click',getNextElement);
 }
 
 //adds validations to the parent element
@@ -623,78 +595,78 @@ function addEvents(){
                             addEventonProceed($next, current,highlight);
                         }
                     }
-                    if(input[n][i].parentChild != undefined){
-                        if((input[n][i].parentChild.Enabler != undefined && 
-                        $('#'+i).val().toUpperCase() == input[n][i].parentChild.Enabler.toUpperCase()) ||
-                        (input[n][i].parentChild.Enabler == "" && $('#'+i).val() != "")){
-                            for(let o in input[n][i].parentChild){
-                                //highlight this child field in the viewer
-                                $('#'+o).focus(()=>{
-                                    //clear container for highlights left over
-                                    imagecontainer.empty();
-                                    //setting position of the image in the image viewer
-                                    imagecontainer.css("backgroundPosition",  w + "px " + h + "px");
-                                    //creating highlight box and position it on the word
-                                    highlight = $('<div class="highlightBox">');
-                                    highlight.css('width', (highlightwidth*cx) + "px");
-                                    highlight.css('height', (highlightheight*cy) + "px");
-                                    imagecontainer.append(highlight);
-                                    highlight.css('position', "relative");
-                                    highlight.css('top', top + "px");
-                                    highlight.css('left', left + "px");
-                                });
-                                //place suggest box under the child input texbox
-                                $('#'+o).keydown((e)=>{
-                                    if(input[n][i].parentChild[o].solrquery != undefined){
-                                        addEventsSuggestBox(o,e);
-                                    }
-                                });
-                                //events for keyup includes on enter, and suggestbox creation
-                                $('#'+o).keyup((e)=>{
-                                    if(e.keyCode == 13){
-                                        if($('#'+o).is('input')){
-                                            validateInput(o);
-                                        }
-                                        //logs for checking the actions when enter is pressed in the input  ; 
-                                        let z = parseInt($('#'+o).attr('tabIndex')) + 1;
-                                        let current = $('[tabIndex=' + (z - 1) +']');
-                                        let $next = $('[tabIndex=' + z +']');
-                                        if($('#'+o).attr(validity) == 'true'){
-                                            $next.focus();  
-                                        }else{
-                                            $('#proceedmodal').show();
-                                            current.blur();
-                                            yesbutton.focus();
-                                            addEventonProceed($next, current,highlight);
-                                        }
-                                    }  
-                                    //create suggest box for child input textbox
-                                    if(input[n][i].parentChild[o].solrquery != null && e.keyCode != 40 && e.keyCode != 38){
-                                        suggestbox.hide();
-                                        $.ajax({url: input[n][i].parentChild[o].solrquery + $('#'+o).val().toLowerCase() + '*', success: function(result){
-                                            if(result.response.docs.length != 0){
-                                                createSuggestBox(result.response.docs,o);
-                                                suggestbox.show()
-                                            }
-                                        }});
-                                    }
-                                });
-                                //hide suggest box
-                                $('#'+o).blur(()=>{
-                                    imagecontainer.empty();
-                                    suggestbox.hide();
-                                });
-                                //enable child input
-                                $('#'+o).removeAttr('disabled');
-                            }
-                        }else if(((input[n][i].parentChild.Enabler != "" && 
-                        $('#'+i).val().toUpperCase() != input[n][i].parentChild.Enabler.toUpperCase()) || 
-                        (input[n][i].parentChild.Enabler == "" && $('#'+i).val() == ""))){
-                            for(let o in input[n][i].parentChild){
-                                $('#'+o).attr('disabled','true');
-                            }
-                        }
-                    }
+                    // if(input[n][i].parentChild != undefined){
+                    //     if((input[n][i].parentChild.Enabler != undefined && 
+                    //     $('#'+i).val().toUpperCase() == input[n][i].parentChild.Enabler.toUpperCase()) ||
+                    //     (input[n][i].parentChild.Enabler == "" && $('#'+i).val() != "")){
+                    //         for(let o in input[n][i].parentChild){
+                    //             //highlight this child field in the viewer
+                    //             $('#'+o).focus(()=>{
+                    //                 //clear container for highlights left over
+                    //                 imagecontainer.empty();
+                    //                 //setting position of the image in the image viewer
+                    //                 imagecontainer.css("backgroundPosition",  w + "px " + h + "px");
+                    //                 //creating highlight box and position it on the word
+                    //                 highlight = $('<div class="highlightBox">');
+                    //                 highlight.css('width', (highlightwidth*cx) + "px");
+                    //                 highlight.css('height', (highlightheight*cy) + "px");
+                    //                 imagecontainer.append(highlight);
+                    //                 highlight.css('position', "relative");
+                    //                 highlight.css('top', top + "px");
+                    //                 highlight.css('left', left + "px");
+                    //             });
+                    //             //place suggest box under the child input texbox
+                    //             $('#'+o).keydown((e)=>{
+                    //                 if(input[n][i].parentChild[o].solrquery != undefined){
+                    //                     addEventsSuggestBox(o,e);
+                    //                 }
+                    //             });
+                    //             //events for keyup includes on enter, and suggestbox creation
+                    //             $('#'+o).keyup((e)=>{
+                    //                 if(e.keyCode == 13){
+                    //                     if($('#'+o).is('input')){
+                    //                         validateInput(o);
+                    //                     }
+                    //                     //logs for checking the actions when enter is pressed in the input  ; 
+                    //                     let z = parseInt($('#'+o).attr('tabIndex')) + 1;
+                    //                     let current = $('[tabIndex=' + (z - 1) +']');
+                    //                     let $next = $('[tabIndex=' + z +']');
+                    //                     if($('#'+o).attr(validity) == 'true'){
+                    //                         $next.focus();  
+                    //                     }else{
+                    //                         $('#proceedmodal').show();
+                    //                         current.blur();
+                    //                         yesbutton.focus();
+                    //                         addEventonProceed($next, current,highlight);
+                    //                     }
+                    //                 }  
+                    //                 //create suggest box for child input textbox
+                    //                 if(input[n][i].parentChild[o].solrquery != null && e.keyCode != 40 && e.keyCode != 38){
+                    //                     suggestbox.hide();
+                    //                     $.ajax({url: input[n][i].parentChild[o].solrquery + $('#'+o).val().toLowerCase() + '*', success: function(result){
+                    //                         if(result.response.docs.length != 0){
+                    //                             createSuggestBox(result.response.docs,o);
+                    //                             suggestbox.show()
+                    //                         }
+                    //                     }});
+                    //                 }
+                    //             });
+                    //             //hide suggest box
+                    //             $('#'+o).blur(()=>{
+                    //                 imagecontainer.empty();
+                    //                 suggestbox.hide();
+                    //             });
+                    //             //enable child input
+                    //             $('#'+o).removeAttr('disabled');
+                    //         }
+                    //     }else if(((input[n][i].parentChild.Enabler != "" && 
+                    //     $('#'+i).val().toUpperCase() != input[n][i].parentChild.Enabler.toUpperCase()) || 
+                    //     (input[n][i].parentChild.Enabler == "" && $('#'+i).val() == ""))){
+                    //         for(let o in input[n][i].parentChild){
+                    //             $('#'+o).attr('disabled','true');
+                    //         }
+                    //     }
+                    // }
                     // localStorage.setItem(i,$('#'+i).val());
                     //create suggest box for field that has a query
                     if(input[n][i].solrquery != null && event.keyCode != 40 && event.keyCode != 38){
@@ -869,18 +841,13 @@ function validateInput(i){
     } 
 }
 
-function writejsonoutput(){
+async function writejsonoutput(){
     // let data = {};
     let doc = builder.create('xml');
     doc.ele('Document_Id')
-        .txt(baseName(images[imageIndex]) + '.' + fileExtension).up();
-    if(config.onBPO){
-        doc.ele('Document_Type')
-        .txt(elementID.split("_")[3]).up();
-    }else{
-        doc.ele('Document_Type')
+        .txt(bpoElement.elementName + '.' + fileExtension).up();
+    doc.ele('Document_Type')
         .txt(doctype).up();
-    }
     doc.ele('Worker_Id')
         .txt(workerid).up();
     for(let n in input){
@@ -943,34 +910,68 @@ function writejsonoutput(){
     }
     var filePath = config.GDERestClient.schemaFolder;
     var fileName = filePath.replace(/^.*[\\\/]/, '').replace(".json", '');
+    if(!fs.existsSync(bpoElement.fileLocation + path.sep + outputFolder)){
+        fs.mkdirSync(bpoElement.fileLocation + path.sep + outputFolder, { recursive: true });
+    }
     if(!config.onBPO){
         // fs.writeFileSync(config.output + "output " + fileName + ".json", JSON.stringify(data), function(err){
         //     if(err) throw err;
         // });
-        if(!fs.existsSync(config.output))fs.mkdirSync(config.output,{recursive:true});
-        fs.writeFileSync(config.output + path.sep + baseName(images[imageIndex]) + "_" + doctype + ".xml", doc.toString( { pretty : true }), function(err){
+        fs.writeFileSync(config.output + "output " + fileName + ".xml", doc.toString( { pretty : true }), function(err){
             if(err) throw err;
         });
     }else{
-        if(!fs.existsSync(bpoElement.fileLocation + path.sep + outputFolder)){
-            fs.mkdirSync(bpoElement.fileLocation + path.sep + outputFolder, { recursive: true });
-        }
         // fs.writeFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + ".json", JSON.stringify(data), function(err){
         //     if(err) throw err;
         // });
-        if(imageIndex == 0){
-            fs.writeFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + ".xml",  doc.toString( { pretty : true }), function(err){
+        // if(imageIndex == 0){
+            fs.writeFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + ".xml",  doc.toString( { pretty : true }), function(err){
                 if(err) throw err;
             });
-        }else{
-            fs.writeFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.toLocaleUpperCase() + ".xml",  doc.toString( { pretty : true }), function(err){
-                if(err) throw err;
-            });
-        }
-        // let src = bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype + ".xml";
-        // let dest = bpoElement.fileLocation + path.sep + bpoElement.elementId + ".xml";
-        // fs.copyFileSync(src,dest);
+        // }else{
+        //     if(fs.existsSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + ".xml")){
+        //         let x = 1;
+        //         let json;
+        //         let output = fs.readFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + ".xml", 'ascii');
+        //         await parser.parseString(output.substring(0, output.length), function (err, result) {
+        //             json = result;
+        //         });
+        //         if(json.xml['Document_Id'][0] == baseName(images[imageIndex]) + '.' + fileExtension){
+        //             fs.writeFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + ".xml",  doc.toString( { pretty : true }), function(err){
+        //                 if(err) throw err;
+        //             });
+        //         }else{
+        //             fs.renameSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + ".xml"
+        //             ,bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + '-' + x + ".xml");
+        //             x++;
+        //             while(fs.existsSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + '-' + x + ".xml")){
+        //                 let output = fs.readFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + '-' + x + ".xml",'ascii');
+        //                 await parser.parseString(output.substring(0, output.length), function (err, result) {
+        //                     json = result;
+        //                 });
+        //                 if(json.xml['Document_Id'][0] == baseName(images[imageIndex]) + '.' + fileExtension){
+        //                     break;
+        //                 }else{
+        //                     x++;
+        //                 }
+        //             }
+        //             fs.writeFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + '-' + x + ".xml",  doc.toString( { pretty : true }), function(err){
+        //                 if(err) throw err;
+        //             });
+        //         }
+        //     }else{
+        //         fs.writeFileSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + ".xml",  doc.toString( { pretty : true }), function(err){
+        //             if(err) throw err;
+        //         });
+        //     }
+        // }
+        // let src = bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + ".xml";
+        // let dest = bpoElement.fileLocation + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + ".xml";
+        // if(src == bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + config.applicationFormExt + ".xml"){
+        //     fs.copyFileSync(src,dest);
+        // }
     }
+    elementDone();
     msgBox.html('Saved');
     msgBox.css('visibility','visible');
     setTimeout(()=>{
@@ -978,34 +979,112 @@ function writejsonoutput(){
     },2000);
 }
 
+// async function checkIfElementDone(){
+//     let isElementDone = false;
+//     let imageCount = 0;
+//     let outputCount = 0;
+//     let extensions = ['jpg','tif','jpeg','tiff'];
+//     await new Promise((resolve)=>{
+//         fs.readdir(bpoElement.fileLocation, (err,dir)=>{
+//             for(let i in dir){
+//                 if(extensions.includes(dir[i].split('.').pop()))imageCount++;
+//             }
+//             if(fs.existsSync(bpoElement.fileLocation + path.sep + config.outputFolder)){
+//                 fs.readdir(bpoElement.fileLocation + path.sep + config.outputFolder,(err,dir)=>{
+//                     for(let i in dir){
+//                         outputCount++;
+//                     }
+//                     isElementDone = (imageCount <= outputCount) ? true:false;
+//                     if(err != null)alert(err);
+//                     resolve();
+//                 });
+//             }else{
+//                 resolve();
+//             }  
+//             if(err!=null)alert(err);
+//         });
+//     });
+//     if(isElementDone){
+//         elementDone();
+//     }else{
+//         msgBox.html('Element not yet done, a document is not yet encoded...');
+//         msgBox.css('visibility','visible');
+//         setTimeout(() => {
+//             msgBox.css('visibility','hidden');
+//         }, 3000);
+//     }
+// }
 //function to remove the current input form and image, and load the next one in the input folder
 async function elementDone(){
-    if(config.onBPO){
-        let completeQuery = config.BPOqueries.completeElement.replace(workerVar, workerid)
-            .replace(nodeVar, nodeID).replace(elementVar, elementID).replace(domainVar,domain)
-            .replace(portVar,port).replace(contextRootVar,contextRoot).replace(nextNodeVar,nextNodeId);
-        $.postJSON(completeQuery,config.BPOqueries.completeInputJSON).done();
-    }else{
-        
+    let inputJSON = config.BPOqueries.completeInputJSON;
+    let  totalCharCount = 0;
+    if(fs.existsSync(bpoElement.fileLocation + path.sep + outputFolder + path.sep + bpoElement.elementId + "_" + doctype.split(' - ')[1] + ".xml")){
+         totalCharCount = await getTotalCharCount();
     }
+    // inputJSON.productionOutputUnits = prodUnits;
+    if(config.BPOqueries.charCountKey != ""){
+        inputJSON.productionOutputUnits[config.BPOqueries.charCountKey] = {
+            measurementUnit:config.BPOqueries.charMeasureUnit,
+            outputCount:totalCharCount,errorCount:0
+        };
+    }
+    if(config.BPOqueries.imgCountKey != ""){
+        inputJSON.productionOutputUnits[config.BPOqueries.imgCountKey] = {
+            measurementUnit:config.BPOqueries.imgMeasureUnit,
+            outputCount:images.length,errorCount:0
+        }
+    }
+    let completeQuery = config.BPOqueries.completeElement.replace(workerVar, workerid)
+        .replace(nodeVar, nodeID).replace(elementVar, elementID).replace(domainVar,domain)
+        .replace(portVar,port).replace(contextRootVar,contextRoot).replace(nextNodeVar,nextNodeId);
+        $.postJSON(completeQuery,inputJSON).done();
+
     //remove the previous image and form to set up for the next image and form
+    bpoElement = undefined;
     await clearWindow();
     nofileMsg.html('Element Done');
     setTimeout(()=>{nofileModal.show()},500);
     nextElementButton.on('click',getNextElement);
 }
 
-function moveCompleted(){
-    if(!fs.existsSync(config.completedFolder)){
-        fs.mkdirSync(config.completedFolder,{recursive:true});
-    }
-    let oldPath = images[imageIndex];
-    let newPath = config.completedFolder + path.sep + baseName(images[imageIndex]) + '.' + fileExtension;
-    fs.moveSync(oldPath,newPath);
-    images.splice(imageIndex,1)
+async function getTotalCharCount(){
+    let elementDirectory =bpoElement.fileLocation + path.sep + config.outputFolder;
+    let totalCharCount = 0;
+    let enterValue = config.enterValue;
+    await new Promise((resolve)=>{
+        fs.readdir(elementDirectory,async (err,dir)=>{
+            for(let i in dir){
+                output = fs.readFileSync(elementDirectory + path.sep + dir[i],('ascii'));
+                let json;
+                await parser.parseString(output.substring(0, output.length), function (err, result) {
+                    json = result;
+                });
+                for(let i in json.xml){
+                    let included = false;
+                    let exTags = config.exemptedTags.split(/\|/);
+                    for(let skip in exTags){
+                        if(!i.includes(exTags[skip])){
+                            included = true;
+                            continue;
+                        }else{
+                            included = false;
+                            break;
+                        }
+                    }
+                    if(included){
+                        totalCharCount += enterValue + json.xml[i][0].length;
+                    }
+                }
+            }
+            if(err!=null)alert(err);
+            resolve();
+        });
+    });
+    return totalCharCount;
 }
+
 function clearWindow(){
-    // hiddenimage.empty();
+    hiddenimage.empty();
     $('#handle').remove();
     imagecontainer.css('backgroundImage', 'none');
     body.append(schemaButton);
@@ -1094,17 +1173,19 @@ $(document).ready(function(){
             }
             changeImage();
         }else if(e.key == 'F9'){
-            elementDone();
+            // elementDone();
         }else if(e.key == 'F6'){
             writejsonoutput();
         }else if(e.key == 'F4'){
             if(fileExtension == 'jpg'){
                 imagecontainer.css('backgroundSize', imagecontainer.width() + 'px ' + (img.naturalHeight*cy) + 'px');
             }else{
-                imagecontainer.css('backgroundSize', imagecontainer.width() + 'px ' + (tifimg.height()*cy) + 'px');
+                imagecontainer.css('backgroundSize', imagecontainer.width() + 'px ' + imagecontainer.height() + 'px');
             }
             imagecontainer.css('backgroundPosition-x',0);
             imagecontainer.css('backgroundPosition-y',0);
+            imagecontainer.css('backgroundPosition','center');
+            imagecontainer.css('backgroundRepeat','no-repeat');
         }
         //image manipulation
         if(keydown_control){
@@ -1130,16 +1211,16 @@ $(document).ready(function(){
                 imagecontainer.css('transform', 'rotate('+ rotate +'deg) scale(' + scale + ')');
             }else if(keydown_arrow_up){
                 let initial = imagecontainer.css('backgroundPosition-y');
-                imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' - 30px)');
+                imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' + 30px)');
             }else if(keydown_arrow_down){
                 let initial = imagecontainer.css('backgroundPosition-y');
-                imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' + 30px)');
+                imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' - 30px)');
             }else if(keydown_arrow_left){ 
                 let initial = imagecontainer.css('backgroundPosition-x');
-                imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' - 30px)');
+                imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' + 30px)');
             }else if(keydown_arrow_right){
                 let initial = imagecontainer.css('backgroundPosition-x');
-                imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' + 30px)');
+                imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' - 30px)');
             }else if(keydown_reset){
                 imagecontainer.css('transform', 'rotate('+ 0 +'deg) scale(' + 1 + ')');
                 if(fileExtension == "tif"){
@@ -1193,43 +1274,55 @@ $(document).ready(function(){
 });
 async function changeImage(){
     remote.getGlobal('shared').index = imageIndex;
-    fileExtension = await images[imageIndex].split('.').pop();
-    if(config.onBPO){
-        imageFileName.html("Element Name: " + elementID + ", " + (imageIndex + 1) + "/" + images.length + "Images");
-    }else{
-        imageFileName.html("FileName: " + baseName(images[imageIndex]) + ", " + (imageIndex + 1) + "/" + images.length + "Images");
-    }
+    fileExtension = images[imageIndex].split('.').pop();
+    imageFileName.html("Element Name: " + elementID + ", " + (imageIndex + 1) + "/" + images.length + " Images");
         if( fileExtension == "jpg"){
             img.src = images[imageIndex];
-            imagecontainer.css("backgroundImage", 'url(' + img.src + ')');
-            imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px"); 
+            imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
         }else if(fileExtension == "tif"){
             tiffile = images[imageIndex];
             tifinput = fs.readFileSync(tiffile);
             tifimg = new Tiff({buffer:tifinput});
             tifdataurl = tifimg.toCanvas().toDataURL();
             imagecontainer.css('backgroundImage', 'url(' + tifdataurl + ')');
-            imagecontainer.css("backgroundSize", (tifimg.width()*cx) + "px " + (tifimg.height()*cy) + "px");
+            imagecontainer.css("backgroundSize", (imagecontainer.width()) + "px " + (imagecontainer.height()) + "px");
         }
-    schemaSelection.empty();
-    body.append(schemaButton);
-    inputcontainer.empty();
-    if(config.manualSchema){
-        schemaBox.html('Select Schema <span class="caret"></span>');
-        createSchemaBox();
-    }else{
-        if(config.onBPO){
-            input = await getSchema(schemaIdentifier);
-        }else{
-            schemaButton.hide();
-            await $.getJSON(config.schema, function(data) {       
-                input = data;
+        imagecontainer.css('backgroundPosition', ' 0px 0px');
+}
+
+// method to check if an output is existing and load it
+async function fileCheck(){
+    await new Promise((resolve)=>{
+        if(fs.existsSync(bpoElement.fileLocation + path.sep + config.outputFolder)){
+            fs.readdir(bpoElement.fileLocation + path.sep + config.outputFolder, async (err, dir)=>{
+                let outputExist = false;
+                for(let i in dir){
+                    let output = fs.readFileSync(bpoElement.fileLocation + path.sep + 
+                        config.outputFolder + path.sep + dir[i],'ascii');
+                        let json;
+                        await parser.parseString(output.substring(0, output.length), function (err, result) {
+                            json = result;
+                        });
+                        if(json.xml['Document_Id'][0] == baseName(images[imageIndex]) + '.' + fileExtension){
+                            input = await getSchema(json.xml['Document_Type'][0]);
+                            doctype = json.xml['Document_Type'][0];
+                            loadFile();
+                            outputExist = true;
+                            break;
+                        }
+                }
+                if(!outputExist){
+                    createSchemaBox();
+                    inputcontainer.append(schemaButton);
+                }
+                if(err != null) alert(err);
+                resolve();
             });
+        }else{
+            createSchemaBox();
+            inputcontainer.append(schemaButton);
         }
-        loadFile();
-    }
-    
-    inputcontainer.append(schemaButton);
+    }); 
 }
 
 //make image viewer draggable
