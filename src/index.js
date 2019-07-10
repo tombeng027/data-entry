@@ -95,7 +95,7 @@ function readDir(data,container){
         label:'Settings',
         click: ()=>{
           if(global.configWindow == null){
-            configWindow = new BrowserWindow({parent:mainWindow,modal:true, width:300, height:400 });
+            configWindow = new BrowserWindow({parent:mainWindow,modal:true, width:300, height:400, webPreferences: { nodeIntegration:true, plugins: true } });
             configWindow.loadFile('./src/environment/config/config.html');
             configWindow.setResizable(false);
             configWindow.setMenuBarVisibility(false);

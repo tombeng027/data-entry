@@ -10,7 +10,7 @@
     "dist": "electron-builder"
   },
   "build": {
-    "productName": "Data Entry Prototype",
+    "productName": "Data Entry Tool (PHLPOST)",
     "extraFiles": [
       "./src/environment/config/config.json"
     ]

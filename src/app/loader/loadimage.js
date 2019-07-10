@@ -140,9 +140,11 @@ async function setInputsAndImages(){
             //wait to make sure images url are already compiled before proceding to generate page
             await new Promise((resolve)=>{
                 fs.readdir(bpoElement.fileLocation + path.sep + imageFolder, (err, dir) => {
-                    let fileTypes = ['tif','jpg','tiff','jpeg'];
+                    let fileTypes = config.fileTypes;
                     for(let i in dir){
-                        if(fileTypes.includes(dir[i].split('.').pop())){
+                        console.log(dir[i])
+                        if(fileTypes.includes(dir[i].split('.').pop().toLocaleLowerCase())){
+                            
                             images.push((bpoElement.fileLocation + path.sep + imageFolder + path.sep + dir[i]).replace(/\\/g, "/"));
                         }
                     }
@@ -240,12 +242,12 @@ async function loadFile(){
 }
 
 function defineOrientation(){
-    fileExtension = images[imageIndex].split('.').pop();
+    fileExtension = images[imageIndex].split('.').pop().toLocaleLowerCase();
         //loading of the image
-        if( fileExtension == "jpg"){
+        if( fileExtension.toLowerCase() == "jpg" || fileExtension.toLowerCase() == "jpeg"){
             img.src = images[imageIndex];
             hiddenimage.append(img);
-        }else if(fileExtension == "tif"){
+        }else if(fileExtension.toLowerCase() == "tif" || fileExtension.toLowerCase() == "tiff"){
             tiffile = images[imageIndex];
             tifinput = fs.readFileSync(tiffile);
             tifimg = new Tiff({buffer:tifinput});
@@ -258,13 +260,13 @@ function defineOrientation(){
             inputcontainer.css('width', '99.5vw');
             inputcontainer.css('height', '29vh');
         }
-        if(fileExtension == "jpg"){
+        if(fileExtension.toLowerCase() == "jpg" || fileExtension.toLowerCase() == "jpeg"){
             img.onload = function(){
                 imagecontainer.css("backgroundImage", "url('" + img.src + "')");
                 imagecontainer.css("backgroundRepeat", "no-repeat");
-                imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
+                imagecontainer.css("backgroundSize", (imagecontainer.width()) + "px " + (imagecontainer.height()) + "px");
             }
-        }else if(fileExtension == "tif"){
+        }else if(fileExtension.toLowerCase() == "tif" || fileExtension.toLowerCase() == "tiff"){
                 imagecontainer.css("backgroundImage", "url('" + tifdataurl + "')");
                 imagecontainer.css("backgroundRepeat", "no-repeat");
                 imagecontainer.css("backgroundSize", (imagecontainer.width()) + "px " + (imagecontainer.height()) + "px");
@@ -360,8 +362,12 @@ function createViewerAndForms(){
             if(i != sectioncoords){
                 let inputprep = $('<div class="input-group">');
                 let inputlinetitle = $('<span class="input-group-addon">').append(input[n][i].fieldLabel);
-                if(input[n][i].validation.mandatory != undefined) inputlinetitle.css('color','rgb(253, 107, 107)');
-                //inputlinetitle.css();
+                if(input[n][i].validation.mandatory != undefined){
+                    if(input[n][i].validation.mandatory == true){
+                        inputlinetitle.css('color','rgb(253, 107, 107)');
+                        inputline.setAttribute(mandatory,true);
+                    }
+               }
                 inputprep.css('float','left');
                 if(config.inputorientation.rows == true){
                     inputprep.css('width','99%');
@@ -560,15 +566,15 @@ function addEvents(){
                     if (input[n][i].validation.invalidchar != undefined &&
                         input[n][i].validation.invalidchar.indexOf(chr) >= 0)return false;
                     if(input[n][i].validation.collection == specific){
-                        if(!(e.keyCode > 7 & e.keyCode < 47) && 
+                        if(!(e.keyCode > 7 & e.keyCode < 47) && !(e.keyCode > 111 & e.keyCode < 124) &&
                         input[n][i].validation.validchars.indexOf(chr) < 0)return false;
                     }
                     if(input[n][i].validation.collection == 'alphabet'){
                         if('1234567890'.indexOf(chr) >= 0) return false;
                     }
                     if(input[n][i].validation.collection == 'numeric'){
-                        if((e.keyCode < 8 & (e.keyCode > 57 & e.keyCode < 90) 
-                        & (e.keyCode > 111 & e.keyCode != 191)))return false;
+                        if((e.keyCode < 8 || (e.keyCode > 57 & e.keyCode < 90) 
+                        || (e.keyCode > 111 & e.keyCode != 191)))return false;
                     }
                     if(input[n][i].solrquery != undefined){
                       addEventsSuggestBox(i,e);
@@ -595,79 +601,79 @@ function addEvents(){
                             addEventonProceed($next, current,highlight);
                         }
                     }
-                    // if(input[n][i].parentChild != undefined){
-                    //     if((input[n][i].parentChild.Enabler != undefined && 
-                    //     $('#'+i).val().toUpperCase() == input[n][i].parentChild.Enabler.toUpperCase()) ||
-                    //     (input[n][i].parentChild.Enabler == "" && $('#'+i).val() != "")){
-                    //         for(let o in input[n][i].parentChild){
-                    //             //highlight this child field in the viewer
-                    //             $('#'+o).focus(()=>{
-                    //                 //clear container for highlights left over
-                    //                 imagecontainer.empty();
-                    //                 //setting position of the image in the image viewer
-                    //                 imagecontainer.css("backgroundPosition",  w + "px " + h + "px");
-                    //                 //creating highlight box and position it on the word
-                    //                 highlight = $('<div class="highlightBox">');
-                    //                 highlight.css('width', (highlightwidth*cx) + "px");
-                    //                 highlight.css('height', (highlightheight*cy) + "px");
-                    //                 imagecontainer.append(highlight);
-                    //                 highlight.css('position', "relative");
-                    //                 highlight.css('top', top + "px");
-                    //                 highlight.css('left', left + "px");
-                    //             });
-                    //             //place suggest box under the child input texbox
-                    //             $('#'+o).keydown((e)=>{
-                    //                 if(input[n][i].parentChild[o].solrquery != undefined){
-                    //                     addEventsSuggestBox(o,e);
-                    //                 }
-                    //             });
-                    //             //events for keyup includes on enter, and suggestbox creation
-                    //             $('#'+o).keyup((e)=>{
-                    //                 if(e.keyCode == 13){
-                    //                     if($('#'+o).is('input')){
-                    //                         validateInput(o);
-                    //                     }
-                    //                     //logs for checking the actions when enter is pressed in the input  ; 
-                    //                     let z = parseInt($('#'+o).attr('tabIndex')) + 1;
-                    //                     let current = $('[tabIndex=' + (z - 1) +']');
-                    //                     let $next = $('[tabIndex=' + z +']');
-                    //                     if($('#'+o).attr(validity) == 'true'){
-                    //                         $next.focus();  
-                    //                     }else{
-                    //                         $('#proceedmodal').show();
-                    //                         current.blur();
-                    //                         yesbutton.focus();
-                    //                         addEventonProceed($next, current,highlight);
-                    //                     }
-                    //                 }  
-                    //                 //create suggest box for child input textbox
-                    //                 if(input[n][i].parentChild[o].solrquery != null && e.keyCode != 40 && e.keyCode != 38){
-                    //                     suggestbox.hide();
-                    //                     $.ajax({url: input[n][i].parentChild[o].solrquery + $('#'+o).val().toLowerCase() + '*', success: function(result){
-                    //                         if(result.response.docs.length != 0){
-                    //                             createSuggestBox(result.response.docs,o);
-                    //                             suggestbox.show()
-                    //                         }
-                    //                     }});
-                    //                 }
-                    //             });
-                    //             //hide suggest box
-                    //             $('#'+o).blur(()=>{
-                    //                 imagecontainer.empty();
-                    //                 suggestbox.hide();
-                    //             });
-                    //             //enable child input
-                    //             $('#'+o).removeAttr('disabled');
-                    //         }
-                    //     }else if(((input[n][i].parentChild.Enabler != "" && 
-                    //     $('#'+i).val().toUpperCase() != input[n][i].parentChild.Enabler.toUpperCase()) || 
-                    //     (input[n][i].parentChild.Enabler == "" && $('#'+i).val() == ""))){
-                    //         for(let o in input[n][i].parentChild){
-                    //             $('#'+o).attr('disabled','true');
-                    //         }
-                    //     }
-                    // }
-                    // localStorage.setItem(i,$('#'+i).val());
+                    if(input[n][i].parentChild != undefined){
+                        if((input[n][i].parentChild.Enabler != undefined && 
+                        $('#'+i).val().toUpperCase() == input[n][i].parentChild.Enabler.toUpperCase()) ||
+                        (input[n][i].parentChild.Enabler == "" && $('#'+i).val() != "")){
+                            for(let o in input[n][i].parentChild){
+                                //highlight this child field in the viewer
+                                $('#'+o).focus(()=>{
+                                    //clear container for highlights left over
+                                    imagecontainer.empty();
+                                    //setting position of the image in the image viewer
+                                    imagecontainer.css("backgroundPosition",  w + "px " + h + "px");
+                                    //creating highlight box and position it on the word
+                                    highlight = $('<div class="highlightBox">');
+                                    highlight.css('width', (highlightwidth*cx) + "px");
+                                    highlight.css('height', (highlightheight*cy) + "px");
+                                    imagecontainer.append(highlight);
+                                    highlight.css('position', "relative");
+                                    highlight.css('top', top + "px");
+                                    highlight.css('left', left + "px");
+                                });
+                                //place suggest box under the child input texbox
+                                $('#'+o).keydown((e)=>{
+                                    if(input[n][i].parentChild[o].solrquery != undefined){
+                                        addEventsSuggestBox(o,e);
+                                    }
+                                });
+                                //events for keyup includes on enter, and suggestbox creation
+                                $('#'+o).keyup((e)=>{
+                                    if(e.keyCode == 13){
+                                        if($('#'+o).is('input')){
+                                            validateInput(o);
+                                        }
+                                        //logs for checking the actions when enter is pressed in the input  ; 
+                                        let z = parseInt($('#'+o).attr('tabIndex')) + 1;
+                                        let current = $('[tabIndex=' + (z - 1) +']');
+                                        let $next = $('[tabIndex=' + z +']');
+                                        if($('#'+o).attr(validity) == 'true'){
+                                            $next.focus();  
+                                        }else{
+                                            $('#proceedmodal').show();
+                                            current.blur();
+                                            yesbutton.focus();
+                                            addEventonProceed($next, current,highlight);
+                                        }
+                                    }  
+                                    //create suggest box for child input textbox
+                                    if(input[n][i].parentChild[o].solrquery != null && e.keyCode != 40 && e.keyCode != 38){
+                                        suggestbox.hide();
+                                        $.ajax({url: input[n][i].parentChild[o].solrquery + $('#'+o).val().toLowerCase() + '*', success: function(result){
+                                            if(result.response.docs.length != 0){
+                                                createSuggestBox(result.response.docs,o);
+                                                suggestbox.show()
+                                            }
+                                        }});
+                                    }
+                                });
+                                //hide suggest box
+                                $('#'+o).blur(()=>{
+                                    imagecontainer.empty();
+                                    suggestbox.hide();
+                                });
+                                //enable child input
+                                $('#'+o).removeAttr('disabled');
+                            }
+                        }else if(((input[n][i].parentChild.Enabler != "" && 
+                        $('#'+i).val().toUpperCase() != input[n][i].parentChild.Enabler.toUpperCase()) || 
+                        (input[n][i].parentChild.Enabler == "" && $('#'+i).val() == ""))){
+                            for(let o in input[n][i].parentChild){
+                                $('#'+o).attr('disabled','true');
+                            }
+                        }
+                    }
+                    localStorage.setItem(i,$('#'+i).val());
                     //create suggest box for field that has a query
                     if(input[n][i].solrquery != null && event.keyCode != 40 && event.keyCode != 38){
                         suggestbox.hide();
@@ -815,19 +821,6 @@ function validateInput(i){
             if(text != '') text += '<br />';
             text += 'Input should be "Alphabet".';
             $('#'+i).attr(validity, 'false');
-        }
-    }else if($('#'+i).attr(collection) == specific){
-        if(text != '') text += '<br />';
-        let validcharacters = $('#'+i).attr('validchars').split("");
-        text += 'Input should be "Specific"';
-        text += '<br />Valid Characters :' + validcharacters;
-        for(let validchar in validcharacters){
-            if($('#'+i).val() != validcharacters[validchar]){
-                $('#'+i).attr(validity, 'false');
-            }else{
-                $('#'+i).attr(validity, 'true');
-                break;
-            }
         }
     }
     tooltiptext.html(text);
@@ -1034,6 +1027,9 @@ async function elementDone(){
             outputCount:images.length,errorCount:0
         }
     }
+    if(config.BPOqueries.extraTag != ""){
+        inputJSON.extraDetails.extra2 = $('#'+config.BPOqueries.extraTag).val();
+    }
     let completeQuery = config.BPOqueries.completeElement.replace(workerVar, workerid)
         .replace(nodeVar, nodeID).replace(elementVar, elementID).replace(domainVar,domain)
         .replace(portVar,port).replace(contextRootVar,contextRoot).replace(nextNodeVar,nextNodeId);
@@ -1108,6 +1104,7 @@ function createPreviewWindow(){
 
 //create autosuggest box
 function createSuggestBox(result,i, solrfield){
+
     suggestbox.empty();
     let resultarray = [];
     for(let index in result){
@@ -1129,6 +1126,7 @@ function createSuggestBox(result,i, solrfield){
 function onlyUnique(value, uniqueIndex, self) { 
     return self.indexOf(value) === uniqueIndex;
 }
+
 
 //image controls
 $(document).ready(function(){
@@ -1177,7 +1175,7 @@ $(document).ready(function(){
         }else if(e.key == 'F6'){
             writejsonoutput();
         }else if(e.key == 'F4'){
-            if(fileExtension == 'jpg'){
+            if(fileExtension.toLowerCase() == "jpg" || fileExtension.toLowerCase() == "jpeg"){
                 imagecontainer.css('backgroundSize', imagecontainer.width() + 'px ' + (img.naturalHeight*cy) + 'px');
             }else{
                 imagecontainer.css('backgroundSize', imagecontainer.width() + 'px ' + imagecontainer.height() + 'px');
@@ -1203,27 +1201,87 @@ $(document).ready(function(){
                 let width = initWidth - (initWidth*.1);
                 let height = initHeight - (initHeight*.1);
                 imagecontainer.css('backgroundSize', width + 'px ' + height + 'px');
-            }else if(keydown_rotateCounterClockwise){ 
-                rotate -= 90;
+            }else if(keydown_rotateCounterClockwise){
+                rotate -= 90; 
+                if(Math.abs(rotate) == 360){
+                    rotate = 0;
+                }
                 imagecontainer.css('transform', 'rotate('+ rotate +'deg) scale(' + scale + ')');
+                let newHeight = imagecontainer.width();
+                let newWidth = imagecontainer.height();
+                imagecontainer.height(newHeight);
+                imagecontainer.width(newWidth);
             }else if(keydown_rotateClockWise){
                 rotate += 90;
+                if(Math.abs(rotate) == 360){
+                    rotate = 0;
+                }
                 imagecontainer.css('transform', 'rotate('+ rotate +'deg) scale(' + scale + ')');
+                let newHeight = imagecontainer.width();
+                let newWidth = imagecontainer.height();
+                imagecontainer.height(newHeight);
+                imagecontainer.width(newWidth);
             }else if(keydown_arrow_up){
-                let initial = imagecontainer.css('backgroundPosition-y');
-                imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' + 30px)');
+                if(Math.abs(rotate) == 0){
+                    let initial = imagecontainer.css('backgroundPosition-y');
+                    imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' + 30px)');
+                }else if(rotate == -90 || rotate == 270){
+                    let initial = imagecontainer.css('backgroundPosition-x');
+                    imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' + 30px)');
+                }else if(rotate == 90 || rotate == -270){
+                    let initial = imagecontainer.css('backgroundPosition-x');
+                    imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' - 30px)');
+                }else if(rotate == 180){
+                    let initial = imagecontainer.css('backgroundPosition-y');
+                    imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' - 30px)');
+                }
+                
             }else if(keydown_arrow_down){
-                let initial = imagecontainer.css('backgroundPosition-y');
-                imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' - 30px)');
+                if(Math.abs(rotate) == 0){
+                    let initial = imagecontainer.css('backgroundPosition-y');
+                    imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' - 30px)');
+                }else if(rotate == -90 || rotate == 270){
+                    let initial = imagecontainer.css('backgroundPosition-x');
+                    imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' - 30px)');
+                }else if(rotate == 90 || rotate == -270){
+                    let initial = imagecontainer.css('backgroundPosition-x');
+                    imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' + 30px)');
+                }else if(rotate == 180){
+                    let initial = imagecontainer.css('backgroundPosition-y');
+                    imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' + 30px)');
+                }
+                
             }else if(keydown_arrow_left){ 
-                let initial = imagecontainer.css('backgroundPosition-x');
-                imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' + 30px)');
+                if(Math.abs(rotate) == 0){          
+                    let initial = imagecontainer.css('backgroundPosition-x');
+                    imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' + 30px)');
+                }else if(rotate == -90 || rotate == 270){
+                    let initial = imagecontainer.css('backgroundPosition-y');
+                    imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' - 30px)');
+                }else if(rotate == 90 || rotate == -270){
+                    let initial = imagecontainer.css('backgroundPosition-y');
+                    imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' + 30px)');
+                }else if(rotate == 180){
+                    let initial = imagecontainer.css('backgroundPosition-x');
+                    imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' - 30px)');
+                }      
             }else if(keydown_arrow_right){
-                let initial = imagecontainer.css('backgroundPosition-x');
-                imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' - 30px)');
+                if(Math.abs(rotate) == 0){
+                    let initial = imagecontainer.css('backgroundPosition-x');
+                    imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' - 30px)');
+                }else if(rotate == -90 || rotate == 270){
+                    let initial = imagecontainer.css('backgroundPosition-y');
+                    imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' + 30px)');
+                }else if(rotate == 90 || rotate == -270){
+                    let initial = imagecontainer.css('backgroundPosition-y');
+                    imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' - 30px)');
+                }else if(rotate == 180){
+                    let initial = imagecontainer.css('backgroundPosition-x');
+                    imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' + 30px)');
+                }
             }else if(keydown_reset){
                 imagecontainer.css('transform', 'rotate('+ 0 +'deg) scale(' + 1 + ')');
-                if(fileExtension == "tif"){
+                if(fileExtension.toLowerCase() == "tif" || fileExtension.toLowerCase() == "tiff"){
                     imagecontainer.css('backgroundSize', (tifimg.width()*cx) + 'px ' + (tifimg.height()*cy) + 'px');
                 }else{
                     imagecontainer.css('backgroundSize', (img.naturalWidth*cx) + 'px ' + (img.naturalHeight*cy) + 'px');
@@ -1274,12 +1332,12 @@ $(document).ready(function(){
 });
 async function changeImage(){
     remote.getGlobal('shared').index = imageIndex;
-    fileExtension = images[imageIndex].split('.').pop();
+    fileExtension = images[imageIndex].split('.').pop().toLocaleLowerCase();
     imageFileName.html("Element Name: " + elementID + ", " + (imageIndex + 1) + "/" + images.length + " Images");
-        if( fileExtension == "jpg"){
+        if( fileExtension.toLowerCase() == "jpg" || fileExtension.toLowerCase() == "jpeg"){
             img.src = images[imageIndex];
-            imagecontainer.css("backgroundSize", (img.naturalWidth*cx) + "px " + (img.naturalHeight*cy) + "px");
-        }else if(fileExtension == "tif"){
+            imagecontainer.css("backgroundSize", (imagecontainer.width()) + "px " + (imagecontainer.height()) + "px");
+        }else if(fileExtension.toLowerCase() == "tif" || fileExtension.toLowerCase() == "tiff"){
             tiffile = images[imageIndex];
             tifinput = fs.readFileSync(tiffile);
             tifimg = new Tiff({buffer:tifinput});

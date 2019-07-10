@@ -15,6 +15,7 @@ body{
 }
 
 #imagecontainer{
+    margin: auto;
     background-color: darkgray;
     background-repeat: no-repeat;
     cursor: move;
