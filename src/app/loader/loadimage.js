@@ -362,12 +362,6 @@ function createViewerAndForms(){
             if(i != sectioncoords){
                 let inputprep = $('<div class="input-group">');
                 let inputlinetitle = $('<span class="input-group-addon">').append(input[n][i].fieldLabel);
-                if(input[n][i].validation.mandatory != undefined){
-                    if(input[n][i].validation.mandatory == true){
-                        inputlinetitle.css('color','rgb(253, 107, 107)');
-                        inputline.setAttribute(mandatory,true);
-                    }
-               }
                 inputprep.css('float','left');
                 if(config.inputorientation.rows == true){
                     inputprep.css('width','99%');
@@ -379,6 +373,12 @@ function createViewerAndForms(){
                 let inputline = document.createElement('input');
                 inputline.setAttribute('id', i);
                 addValidations(inputline, n, i);
+                if(input[n][i].validation.mandatory != undefined){
+                    if(input[n][i].validation.mandatory == true){
+                        inputlinetitle.css('color','rgb(253, 107, 107)');
+                        inputline.setAttribute(mandatory,true);
+                    }
+                }
                 // inputline.setAttribute('value', localStorage.getItem(i));
                 if(input[n][i].validation.collection == alphanumeric){
                     inputline.setAttribute('type','text');
@@ -1222,6 +1222,7 @@ $(document).ready(function(){
                 imagecontainer.height(newHeight);
                 imagecontainer.width(newWidth);
             }else if(keydown_arrow_up){
+                console.log(rotate)
                 if(Math.abs(rotate) == 0){
                     let initial = imagecontainer.css('backgroundPosition-y');
                     imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' + 30px)');
@@ -1231,7 +1232,7 @@ $(document).ready(function(){
                 }else if(rotate == 90 || rotate == -270){
                     let initial = imagecontainer.css('backgroundPosition-x');
                     imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' - 30px)');
-                }else if(rotate == 180){
+                }else if(rotate == 180 || rotate == -180){
                     let initial = imagecontainer.css('backgroundPosition-y');
                     imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' - 30px)');
                 }
@@ -1246,7 +1247,7 @@ $(document).ready(function(){
                 }else if(rotate == 90 || rotate == -270){
                     let initial = imagecontainer.css('backgroundPosition-x');
                     imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' + 30px)');
-                }else if(rotate == 180){
+                }else if(rotate == 180 || rotate == -180){
                     let initial = imagecontainer.css('backgroundPosition-y');
                     imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' + 30px)');
                 }
@@ -1261,7 +1262,7 @@ $(document).ready(function(){
                 }else if(rotate == 90 || rotate == -270){
                     let initial = imagecontainer.css('backgroundPosition-y');
                     imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' + 30px)');
-                }else if(rotate == 180){
+                }else if(rotate == 180 || rotate == -180){
                     let initial = imagecontainer.css('backgroundPosition-x');
                     imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' - 30px)');
                 }      
@@ -1275,7 +1276,7 @@ $(document).ready(function(){
                 }else if(rotate == 90 || rotate == -270){
                     let initial = imagecontainer.css('backgroundPosition-y');
                     imagecontainer.css('backgroundPosition-y', 'calc('+ initial + ' - 30px)');
-                }else if(rotate == 180){
+                }else if(rotate == 180 || rotate == -180){
                     let initial = imagecontainer.css('backgroundPosition-x');
                     imagecontainer.css('backgroundPosition-x', 'calc('+ initial + ' + 30px)');
                 }

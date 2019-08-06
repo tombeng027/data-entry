@@ -22,9 +22,9 @@
         "extraDetail": "extra1"
     },
     "BPOqueries": {
-        "nodeID": "phpost-encoding",
-        "nextNodeID": "phpost-endnode",
-        "domain": "http://192.168.185.229",
+        "nodeID": "process2",
+        "nextNodeID": "process3",
+        "domain": "http://192.168.185.78",
         "port": "8080",
         "contextRoot": "bpo5",
         "getCurrentWorkload": "domain:port/contextroot/req/workers/workerid/nodes/nodeid/workload?sort=startproctime",
